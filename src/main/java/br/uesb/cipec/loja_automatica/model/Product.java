@@ -20,16 +20,16 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.SEQUENCE) // Autoincrement with strategy
     private Long id;
 
-    @Column( precision = 5 , scale = 2 ,nullable = false)
+    @Column( precision = 5 , scale = 2 ,nullable = false) // The price format will be xxx.yy
     private BigDecimal price;
 
     @Column(nullable = false , length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false) 
     private int amount;
 
-    @Column(length =  150)
+    @Column(length =  150) // Max size is 150
     private String description;
     
 
