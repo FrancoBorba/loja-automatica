@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.service.ProductService;
 
@@ -34,7 +35,7 @@ public class ControllerProduct {
         MediaType.APPLICATION_YAML_VALUE
         }
         )
-    public Product findByID( @PathVariable("id") Long id ){
+    public ProductDTO findByID( @PathVariable("id") Long id ){
       return service.findById(id);
     }
 
@@ -59,7 +60,7 @@ public class ControllerProduct {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public Product create(@RequestBody Product product){
+    public ProductDTO create(@RequestBody ProductDTO product){
         return service.create(product);
     }
 
@@ -73,7 +74,7 @@ public class ControllerProduct {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public Product update(@RequestBody Product product){
+    public ProductDTO update(@RequestBody ProductDTO product){
         return service.update(product);
     }
 

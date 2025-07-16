@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
+import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,18 +17,32 @@ public class ProductService {
     @Autowired 
     ProductRepository repository;
 
+    @Autowired
+    ProductMapper mapper;
+
   //  Returns a ProductDTO by searching for it through its ID
-  public Product findById(Long id) {
-    return repository.findById(id)
+  public ProductDTO findById(Long id) {
+
+
+    var entity = repository.findById(id)
                      .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + id));
+    
+    var dto = mapper.toDTO(entity);
+
+    return dto;
   }
 
     // Create and returns the product
-    public Product create(Product product){
+    public ProductDTO create(ProductDTO product){
       if (product == null) {
          throw new IllegalArgumentException("Product cannot be null");
       }
-        return repository.save(product);
+      var entity = mapper.toEntity(product);
+
+      repository.save(entity);
+
+      return mapper.toDTO(entity);
+
     }
 
     // Return all Products
@@ -42,27 +58,30 @@ public class ProductService {
 
     // Currently, to update it is necessary to pass the json of the Product with 
     // the updates
-    public Product update(Product product){
+    public ProductDTO update(ProductDTO product){
       if(product == null){
         throw new IllegalArgumentException("Product cannot be null");
     }
 
-      Product productUpdate = repository.findById(product.getId()).
+      Product entity = repository.findById(product.getId()).
       orElseThrow(()-> new EntityNotFoundException("Product not found")); // Return the Entity
 
-      productUpdate.setName(product.getName());
-      productUpdate.setAmount(product.getAmount());
-      productUpdate.setPrice(product.getPrice());
-      productUpdate.setDescription(product.getDescription());
+      entity.setName(product.getName());
+      entity.setAmount(product.getAmount());
+      entity.setDescription(product.getDescription());
+      entity.setPrice(product.getPrice());
 
-      return repository.save(productUpdate);
+      var dto = mapper.toDTO(entity);
+  
+      return dto;
+     
     }
 
     public void delete(Long id){
-      Product product = repository.findById(id).orElseThrow(()-> new EntityNotFoundException("Product not found"));
+      Product entity = repository.findById(id).orElseThrow(()-> new EntityNotFoundException("Product not found"));
 
       // Delete the product with this id
-     repository.delete(product);
+     repository.delete(entity);
     }
 
     
