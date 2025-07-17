@@ -71,6 +71,8 @@ public class ProductService {
       entity.setDescription(product.getDescription());
       entity.setPrice(product.getPrice());
 
+      repository.save(entity);
+
       var dto = mapper.toDTO(entity);
   
       return dto;
