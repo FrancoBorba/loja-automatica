@@ -14,10 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
-import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.service.ProductService;
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -45,7 +44,7 @@ public class ControllerProduct {
       MediaType.APPLICATION_XML_VALUE ,
       MediaType.APPLICATION_YAML_VALUE}
       )
-    public List<Product> findAll(){ // end point GET
+    public List<ProductDTO> findAll(){ // end point GET
     
       return service.findAll();
     }
@@ -60,7 +59,7 @@ public class ControllerProduct {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public ProductDTO create(@RequestBody ProductDTO product){
+    public ProductDTO create(@RequestBody @Valid ProductDTO product){
         return service.create(product);
     }
 
@@ -74,12 +73,12 @@ public class ControllerProduct {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public ProductDTO update(@RequestBody ProductDTO product){
+    public ProductDTO update(@RequestBody @Valid ProductDTO product){
         return service.update(product);
     }
 
     @DeleteMapping(value = "/{id}")
-    public void delete(@PathVariable("id") Long id){
+    public void delete(@PathVariable("id")  Long id){
         service.delete(id);
     }
 

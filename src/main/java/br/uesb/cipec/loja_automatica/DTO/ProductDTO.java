@@ -3,15 +3,32 @@ package br.uesb.cipec.loja_automatica.DTO;
 import java.math.BigDecimal;
 
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+
+
 public class ProductDTO {
 
 
     public ProductDTO(){} // Constructor
 
     private Long id;
-    private BigDecimal price;
+
+    @NotBlank(message = "Name is required")
     private String name;
-    private int amount;
+
+    @NotNull(message = "Price is required")
+    @Positive(message = "Price must be greater than zero")
+    private BigDecimal price;
+
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be greater than zero")
+    private Integer amount;
+
+    @Size(max = 150, message = "Description must be at most 150 characters")
     private String description;
     
 
@@ -39,11 +56,11 @@ public class ProductDTO {
         this.name = name;
     }
 
-    public int getAmount() {
+    public Integer getAmount() {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(Integer amount) {
         this.amount = amount;
     }
 
