@@ -2,15 +2,15 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/loja_automatica
     username: postgres
-    password: 247935
+    password: 1234
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
 
