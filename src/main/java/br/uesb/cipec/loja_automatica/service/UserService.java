@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
@@ -22,6 +24,8 @@ public class UserService {
     @Autowired
     UserMapper mapper;
 
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     public UserDTO create(UserDTO user){
         if (user == null) {
             throw new RequiredObjectIsNullException("User cannot be null.");
@@ -31,6 +35,10 @@ public class UserService {
         }
 
         var entity = mapper.toEntity(user);
+        
+        // encrypting the password before saving the entity 
+        String encryptedPassword = passwordEncoder.encode(entity.getPassword());
+        entity.setPassword(encryptedPassword);
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
         var dto = mapper.toDTO(entity);
@@ -40,6 +48,15 @@ public class UserService {
     public UserDTO findById(Long id){
         var entity = repository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        var dto = mapper.toDTO(entity);
+
+        return dto;
+    }
+
+    public UserDTO findByEmail(String email){
+        var entity = repository.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         var dto = mapper.toDTO(entity);
 
@@ -71,8 +88,7 @@ public class UserService {
         entity.setName(user.getName());
         entity.setEmail(user.getEmail()); 
         entity.setDateOfBirth(user.getDateOfBirth());
-        entity.setActive(user.isActive());
-  
+          
         repository.save(entity);
   
         var dto = mapper.toDTO(entity);

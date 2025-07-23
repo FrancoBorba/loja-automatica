@@ -4,11 +4,12 @@ import java.time.LocalDate;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.PastOrPresent;
 
 public class UserDTO extends RepresentationModel<UserDTO>{
 
@@ -24,14 +25,17 @@ public class UserDTO extends RepresentationModel<UserDTO>{
     @Email(message = "Invalid email format")
     private String email;
 
+    @NotBlank(message = "Password is required")
+    private String password;
+
     @NotNull(message = "Date of birth is required")
     @Past(message = "Date of birth must be in the past")
     private LocalDate dateOfBirth;
 
-    @NotNull(message = "Date of registration is required")
-    @PastOrPresent(message = "Date of registration must be today or in the past")   
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY) //it cannot be modified by the client via JSON
     private LocalDate dateOfRegistration;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private boolean isActive;
 
     public Long getId() {
@@ -80,6 +84,14 @@ public class UserDTO extends RepresentationModel<UserDTO>{
 
     public void setActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override

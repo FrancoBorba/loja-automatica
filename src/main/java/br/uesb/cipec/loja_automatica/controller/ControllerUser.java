@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,20 +43,6 @@ public class ControllerUser {
       )
     public List<UserDTO> findAll(){ 
       return service.findAll();
-    }
-
-    @PostMapping(
-        consumes =  { 
-        MediaType.APPLICATION_JSON_VALUE ,
-        MediaType.APPLICATION_XML_VALUE ,
-        MediaType.APPLICATION_YAML_VALUE} ,
-        produces = { 
-        MediaType.APPLICATION_JSON_VALUE ,
-        MediaType.APPLICATION_XML_VALUE ,
-        MediaType.APPLICATION_YAML_VALUE}
-    )
-    public UserDTO create(@RequestBody @Valid UserDTO user){
-        return service.create(user);
     }
 
     @PutMapping(
