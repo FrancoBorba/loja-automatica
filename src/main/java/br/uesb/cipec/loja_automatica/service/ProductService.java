@@ -2,6 +2,8 @@ package br.uesb.cipec.loja_automatica.service;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +27,13 @@ public class ProductService {
     @Autowired
     ProductMapper mapper;
 
+    // For adding loggers in he applicaiton
+    // We will use the logs at the info level here
+    private Logger logger = LoggerFactory.getLogger(ProductService.class.getName());
+
   //  Returns a ProductDTO by searching for it through its ID
   public ProductDTO findById(Long id) {
+    logger.info("find one product"); 
 
 
     var entity = repository.findById(id)
@@ -43,6 +50,8 @@ public class ProductService {
       if (product == null) {
          throw new RequiredObjectIsNullException("Product cannot be null.");
       }
+
+      logger.info("Create a product");
       var entity = mapper.toEntity(product);
 
       repository.save(entity);
@@ -56,6 +65,7 @@ public class ProductService {
 
     // Return all Products
    public List<ProductDTO> findAll() {
+    logger.info("Find all products");
     var entities = repository.findAll();
     var products = entities.stream()
                    .map(mapper::toDTO)
@@ -75,6 +85,8 @@ public class ProductService {
        throw new RequiredObjectIsNullException("Product cannot be null.");
     }
 
+     logger.info("Update the product " + product.getName());
+    
       Product entity = repository.findById(product.getId()).
       orElseThrow(()-> new ResourceNotFoundException("Product not found")); // Return the Entity
 
@@ -92,7 +104,9 @@ public class ProductService {
     }
 
     public void delete(Long id){
+
       Product entity = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product not found"));
+      logger.info("Delete  the product from Id " + id );
 
       // Delete the product with this id
      repository.delete(entity);
