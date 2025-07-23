@@ -17,7 +17,7 @@ public class Product {
     public Product(){} // Constructor
 
     @Id // primary key
-    @GeneratedValue(strategy = GenerationType.SEQUENCE) // Autoincrement with strategy
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Autoincrement with strategy
     private Long id;
 
     @Column( precision = 5 , scale = 2 ,nullable = false) // The price format will be xxx.yy

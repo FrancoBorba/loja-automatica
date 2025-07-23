@@ -9,8 +9,8 @@ import br.uesb.cipec.loja_automatica.model.Product;
 @Mapper(componentModel = "spring")
 public  interface ProductMapper {
 
-    public ProductDTO toDTO(Product product);
+  public ProductDTO toDTO(Product product);
 
-    public Product toEntity(ProductDTO product);
+  public Product toEntity(ProductDTO product);
    
 } 
