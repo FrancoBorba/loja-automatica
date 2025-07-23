@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
+import br.uesb.cipec.loja_automatica.controller.ControllerProduct;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 
 @Service // This annotation says that the class will contain the busines rules
@@ -30,6 +33,7 @@ public class ProductService {
                      .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     
     var dto = mapper.toDTO(entity);
+    addHatoasLinks(dto);
 
     return dto;
   }
@@ -43,16 +47,25 @@ public class ProductService {
 
       repository.save(entity);
 
-      return mapper.toDTO(entity);
+      var dto = mapper.toDTO(entity);
+
+      addHatoasLinks(dto);
+      return dto;
 
     }
 
     // Return all Products
    public List<ProductDTO> findAll() {
     var entities = repository.findAll();
-    return entities.stream()
+    var products = entities.stream()
                    .map(mapper::toDTO)
                    .toList();
+
+    for (ProductDTO productDTO : products){
+          addHatoasLinks(productDTO);
+    }
+
+    return products;
 }
 
     // Currently, to update it is necessary to pass the json of the Product with 
@@ -73,7 +86,7 @@ public class ProductService {
       repository.save(entity);
 
       var dto = mapper.toDTO(entity);
-  
+      addHatoasLinks(dto);
       return dto;
      
     }
@@ -84,6 +97,21 @@ public class ProductService {
       // Delete the product with this id
      repository.delete(entity);
     }
+
+    
+ public  void addHatoasLinks( ProductDTO dto) {
+    dto.add(linkTo(methodOn(ControllerProduct.class).findByID(dto.getId())).withSelfRel().withType("GET"));
+
+    dto.add(linkTo(methodOn(ControllerProduct.class).findAll()).withRel("findAll").withType("GET"));
+
+    dto.add(linkTo(methodOn(ControllerProduct.class).create(dto)).withRel("create").withType("POST"));
+
+    dto.add(linkTo(methodOn(ControllerProduct.class).update(dto)).withRel("update").withType("PUT"));
+
+    dto.add(linkTo(methodOn(ControllerProduct.class).delete(dto.getId())).withRel("delete").withType("DELETE"));
+
+    
+  }
 
     
 

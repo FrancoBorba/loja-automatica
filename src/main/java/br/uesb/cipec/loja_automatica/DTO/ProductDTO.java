@@ -2,6 +2,7 @@ package br.uesb.cipec.loja_automatica.DTO;
 
 import java.math.BigDecimal;
 
+import org.springframework.hateoas.RepresentationModel;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +11,7 @@ import jakarta.validation.constraints.Size;
 
 
 
-public class ProductDTO {
+public class ProductDTO extends RepresentationModel<ProductDTO> {
 
 
     public ProductDTO(){} // Constructor
