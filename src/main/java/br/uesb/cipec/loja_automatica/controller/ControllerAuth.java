@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.repository.UserRepository;
 import br.uesb.cipec.loja_automatica.security.JwtUtil;
 import br.uesb.cipec.loja_automatica.service.UserService;
@@ -41,20 +44,21 @@ public class ControllerAuth {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public ResponseEntity<?> create(@RequestBody @Valid UserDTO user){
+    public ResponseEntity<?> create(@RequestBody @Valid UserRegisterDTO user){
         if (repository.findByEmail(user.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("E-mail is already registered.");
         }
 
-        UserDTO userResponse = service.create(user);
+        UserResponseDTO userResponse = service.create(user);
         
         return ResponseEntity.ok(userResponse);
     }
 
+    // this method validates the authentication, then returns a JWT token 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request){
-        UserDTO user = service.findByEmail(request.get("email"));
-        if(user != null && passwordEncoder.matches(request.get("password"), user.getPassword())){
+    public ResponseEntity<?> login(@RequestBody @Valid UserLoginDTO loginRequest){
+        UserDTO user = service.findByEmail(loginRequest.getEmail());
+        if(user != null && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())){
             String token = JwtUtil.generateToken(user.getEmail());
             return ResponseEntity.ok(Map.of("token", token));
         }

@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
@@ -26,7 +29,7 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public UserDTO create(UserDTO user){
+    public UserResponseDTO create(UserRegisterDTO user){
         if (user == null) {
             throw new RequiredObjectIsNullException("User cannot be null.");
         }
@@ -41,7 +44,7 @@ public class UserService {
         entity.setPassword(encryptedPassword);
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
-        var dto = mapper.toDTO(entity);
+        var dto = mapper.toResponseDTO(entity);
         return dto;
     }
 
@@ -63,17 +66,35 @@ public class UserService {
         return dto;
     }
 
-    public List<UserDTO> findAll(){
+    public UserResponseDTO findByIdResponseDTO(Long id){
+        var entity = repository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        var dto = mapper.toResponseDTO(entity);
+
+        return dto;
+    }
+
+    public UserResponseDTO findByEmailResponseDTO(String email){
+        var entity = repository.findByEmail(email)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        var dto = mapper.toResponseDTO(entity);
+
+        return dto;
+    }
+
+    public List<UserResponseDTO> findAll(){
         var entities = repository.findAll();
 
         var users = entities.stream()
-        .map(mapper::toDTO)
+        .map(mapper::toResponseDTO)
         .toList();
 
         return users;
     }
 
-    public UserDTO update(UserDTO user){
+    public UserResponseDTO update(UserUpdateDTO user){
         if(user == null){
          throw new RequiredObjectIsNullException("User cannot be null.");
         }
@@ -81,17 +102,25 @@ public class UserService {
         User entity = repository.findById(user.getId()).
         orElseThrow(()-> new ResourceNotFoundException("User not found"));
   
-        Optional<User> userWithSameEmail = repository.findByEmail(user.getEmail());
-        if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Email address already in use by another user.");
+        if(user.getEmail() != null){
+            Optional<User> userWithSameEmail = repository.findByEmail(user.getEmail());
+            if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("Email address already in use by another user.");
+            }
+            entity.setEmail(user.getEmail()); 
         }
-        entity.setName(user.getName());
-        entity.setEmail(user.getEmail()); 
-        entity.setDateOfBirth(user.getDateOfBirth());
+    
+        if(user.getName()!=null){
+            entity.setName(user.getName());
+        }
+        
+        if(user.getDateOfBirth() != null){
+            entity.setDateOfBirth(user.getDateOfBirth());
+        }
           
         repository.save(entity);
   
-        var dto = mapper.toDTO(entity);
+        var dto = mapper.toResponseDTO(entity);
         return dto;
     }
   
