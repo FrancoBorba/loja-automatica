@@ -46,10 +46,9 @@ public class ControllerAuth {
             return ResponseEntity.badRequest().body("E-mail is already registered.");
         }
 
-        service.create(user);
-        user.setPassword(null); //doesnt return the password 
-
-        return ResponseEntity.ok(user);
+        UserDTO userResponse = service.create(user);
+        
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping("/login")
