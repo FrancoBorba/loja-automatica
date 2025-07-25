@@ -40,7 +40,7 @@ public class Purchase {
   @Enumerated(EnumType.STRING)
   private TypePayment payment;
 
-  @Column( precision = 5 , scale = 2 ,nullable = false , name ="valor") // The price format will be xxx.yy
+  @Column( precision = 10 , scale = 2 ,nullable = false , name ="valor") // The price format will be xxx.yy
   private BigDecimal value;
 
   @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL, orphanRemoval = true)

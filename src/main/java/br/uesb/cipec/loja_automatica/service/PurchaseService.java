@@ -46,7 +46,6 @@ Therefore, for Request ➔ Entity, it's recommended to manually map in the Servi
    */  
  
       public PurchaseResponseDTO createPurchase(PurchaseRequestDTO requestDTO) {
-         System.out.println("DTO Recebido no Controller: " + requestDTO.toString());
         Purchase purchase = new Purchase();
         //Take this data from the request and set it for the response
         purchase.setStatus(requestDTO.getStatusPurchase());
