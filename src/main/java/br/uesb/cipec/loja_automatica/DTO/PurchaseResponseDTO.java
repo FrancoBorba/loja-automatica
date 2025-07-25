@@ -1,75 +1,56 @@
-package br.uesb.cipec.loja_automatica.DTO;
+ package br.uesb.cipec.loja_automatica.DTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-import br.uesb.cipec.loja_automatica.enums.StatusCompra;
+import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.enums.TypePayment;
-import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 
-public class PurchaseDTO {
+public class PurchaseResponseDTO {
 
   private Long id;
-
   private LocalDateTime creationDate;
-
-
-  private StatusCompra status;
-
+  private StatusPurchase status;
   private TypePayment payment;
-
   private BigDecimal value;
-
-  private List<ItemPurchase> itens = new ArrayList<>();
-
+  private List<ItemPurchaseResponseDTO> itens;
+  
   public Long getId() {
     return id;
   }
-
   public void setId(Long id) {
     this.id = id;
   }
-
   public LocalDateTime getCreationDate() {
     return creationDate;
   }
-
   public void setCreationDate(LocalDateTime creationDate) {
     this.creationDate = creationDate;
   }
-
-  public StatusCompra getStatus() {
+  public StatusPurchase getStatus() {
     return status;
   }
-
-  public void setStatus(StatusCompra status) {
+  public void setStatus(StatusPurchase status) {
     this.status = status;
   }
-
   public TypePayment getPayment() {
     return payment;
   }
-
   public void setPayment(TypePayment payment) {
     this.payment = payment;
   }
-
   public BigDecimal getValue() {
     return value;
   }
-
   public void setValue(BigDecimal value) {
     this.value = value;
   }
-
-  public List<ItemPurchase> getItens() {
+  public List<ItemPurchaseResponseDTO> getItens() {
     return itens;
   }
-
-  public void setItens(List<ItemPurchase> itens) {
+  public void setItens(List<ItemPurchaseResponseDTO> itens) {
     this.itens = itens;
   }
-
+  
 }
