@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity 
@@ -27,6 +28,9 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
     private LocalDate dateOfBirth;
 
     @Column(nullable = false , updatable = false) //it is not possible to change the value 
@@ -35,7 +39,11 @@ public class User {
     @Column(nullable = false)
     private boolean isActive;
 
-    //TODO add the password with hash 
+    @PrePersist //executes automatically before the entity is created
+    public void prePersist() {
+        this.dateOfRegistration = LocalDate.now();
+        this.isActive = true;
+    }
 
     public Long getId() {
         return id;
@@ -83,6 +91,14 @@ public class User {
 
     public void setActive(boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
