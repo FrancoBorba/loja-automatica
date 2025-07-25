@@ -119,6 +119,12 @@ public class Product {
         return true;
     }
 
+    @Override
+public String toString() {
+    // Adicione outros campos se quiser, mas o 'id' é o mais importante aqui.
+    return "Product[id=" + id + ", name=" + name + "]";
+}
+
     
     
 

@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "item_compra")
+@Table(name = "item_purchase")
 public class ItemPurchase {
   
   @Id // primary key 
@@ -33,10 +33,12 @@ This column will store the Product ID associated with each ItemPurchase.
   private Purchase purchase;
 
   
-  @Column( precision = 5 , scale = 2 ,nullable = false) // The price format will be xxx.yy
-  private BigDecimal valor;
+  
 
-  @Column(nullable = false)
+  @Column( precision = 10 , scale = 2 ,nullable = false , name = "subvalor") // The price format will be xxx.yy
+  private BigDecimal subvalor;
+
+  @Column(nullable = false , name = "quantidade")
   private Integer quantity;
 
 
@@ -65,12 +67,12 @@ This column will store the Product ID associated with each ItemPurchase.
     this.purchase = purchase;
   }
 
-  public BigDecimal getValor() {
-    return valor;
+  public BigDecimal getSubvalor() {
+    return subvalor;
   }
 
-  public void setValor(BigDecimal valor) {
-    this.valor = valor;
+  public void setSubvalor(BigDecimal subvalor) {
+    this.subvalor = subvalor;
   }
 
   public Integer getQuantity() {
@@ -80,4 +82,15 @@ This column will store the Product ID associated with each ItemPurchase.
   public void setQuantity(Integer quantity) {
     this.quantity = quantity;
   }
+  public Purchase getPurchase() {
+    return purchase;
+  }
+
+  public void setPurchase(Purchase purchase) {
+    this.purchase = purchase;
+  }
+  @Override
+public String toString() {
+    return "ItemPurchase[quantity=" + quantity + ", product=" + product + "]";
+}
 }
