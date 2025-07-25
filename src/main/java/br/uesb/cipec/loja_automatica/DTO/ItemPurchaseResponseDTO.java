@@ -8,6 +8,9 @@ public class ItemPurchaseResponseDTO {
    private BigDecimal value;
    private String productName;
    
+   public ItemPurchaseResponseDTO() {
+  }
+  
    public Long getId() {
      return id;
    }

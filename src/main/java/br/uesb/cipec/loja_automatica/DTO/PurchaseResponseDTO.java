@@ -16,6 +16,9 @@ public class PurchaseResponseDTO {
   private BigDecimal value;
   private List<ItemPurchaseResponseDTO> itens;
   
+  public PurchaseResponseDTO() {
+  }
+  
   public Long getId() {
     return id;
   }

@@ -35,7 +35,7 @@ This column will store the Product ID associated with each ItemPurchase.
   
   
 
-  @Column( precision = 5 , scale = 2 ,nullable = false , name = "subvalor") // The price format will be xxx.yy
+  @Column( precision = 10 , scale = 2 ,nullable = false , name = "subvalor") // The price format will be xxx.yy
   private BigDecimal subvalor;
 
   @Column(nullable = false , name = "quantidade")

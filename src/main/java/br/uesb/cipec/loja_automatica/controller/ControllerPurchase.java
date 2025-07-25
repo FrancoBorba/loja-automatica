@@ -4,9 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.controller.docs.PurchaseControllerDocs;
 import br.uesb.cipec.loja_automatica.service.PurchaseService;
@@ -31,6 +33,23 @@ public class ControllerPurchase implements PurchaseControllerDocs  {
   )
   public PurchaseResponseDTO findByID(@PathVariable("id") Long id) {
     return service.findById(id);
+  }
+
+  @Override
+  @PostMapping(
+    consumes = {
+      MediaType.APPLICATION_JSON_VALUE,
+      MediaType.APPLICATION_XML_VALUE,
+      MediaType.APPLICATION_YAML_VALUE
+    },
+    produces = {
+      MediaType.APPLICATION_JSON_VALUE,
+      MediaType.APPLICATION_XML_VALUE,
+      MediaType.APPLICATION_YAML_VALUE
+    }
+  )
+  public PurchaseResponseDTO create(@RequestBody PurchaseRequestDTO purchaseRequestDTO) {
+      return service.createPurchase(purchaseRequestDTO);
   }
   
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import br.uesb.cipec.loja_automatica.DTO.ItemPurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
 import br.uesb.cipec.loja_automatica.model.ItemPurchase;
@@ -39,45 +40,57 @@ public class PurchaseService {
       return responseDTO;
     }
 
+  /*
+MapStruct isn't as efficient for Request ➔ Entity when we need additional logic (such as calculating values or searching the database).
+Therefore, for Request ➔ Entity, it's recommended to manually map in the Service, for example:
+   */  
+ 
       public PurchaseResponseDTO createPurchase(PurchaseRequestDTO requestDTO) {
-        return null;
+         System.out.println("DTO Recebido no Controller: " + requestDTO.toString());
+        Purchase purchase = new Purchase();
+        //Take this data from the request and set it for the response
+        purchase.setStatus(requestDTO.getStatusPurchase());
+        purchase.setPayment(requestDTO.getPayment());
+        // Take the data of criation
+        purchase.setCreationDate(LocalDateTime.now());
+
+        List<ItemPurchase> itens = new ArrayList<>();
+        BigDecimal totalValue = BigDecimal.ZERO; // start the total value with 0
+
+        if (requestDTO.getItens() == null || requestDTO.getItens().isEmpty()) {
+    throw new RequiredObjectIsNullException("A purchase must have at least one item.");
+}
+
+        // get the itens of request 
+         for (ItemPurchaseRequestDTO itemRequest : requestDTO.getItens()) {
+          // We cannot use the findByID method of the class because it returns the PurchaseResponseDTO
+        Product product = productRepository.findById(itemRequest.getProductID())
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + itemRequest.getProductID() + " not found"));
+
+        ItemPurchase item = new ItemPurchase();
+
+        item.setProduct(product); // Add the product
+        item.setQuantity(itemRequest.getQuantity()); // Get the quantity of items in the product
+
+        
+        BigDecimal subTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+        item.setSubvalor(subTotal);
+        item.setPurchase(purchase);
+
+        totalValue = totalValue.add(subTotal);
+        itens.add(item);
+
+         }
+                 purchase.setItens(itens);
+        purchase.setValue(totalValue);
+
+        Purchase savedPurchase = purchaseRepository.save(purchase);
+        return purchaseMapper.toResponseDTO(savedPurchase);
       }
 
 
 
 
-  /*
-MapStruct isn't as efficient for Request ➔ Entity when we need additional logic (such as calculating values or searching the database).
-Therefore, for Request ➔ Entity, it's recommended to manually map in the Service, for example:
-   */  
-  public Purchase createPurchaseFromRequest(PurchaseRequestDTO dto) {
-    Purchase purchase = new Purchase();
-    purchase.setStatus(dto.getStatus());
-    purchase.setPayment(dto.getPayment());
-    purchase.setCreationDate(LocalDateTime.now());
 
-    List<ItemPurchase> itens = new ArrayList<>();
-    BigDecimal total = BigDecimal.ZERO;
-
-    for (ItemPurchaseRequestDTO itemDTO : dto.getItens()) {
-        Product product = productRepository.findById(itemDTO.getProductID())
-            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-        ItemPurchase item = new ItemPurchase();
-        item.setProduct(product);
-        item.setQuantity(itemDTO.getQuantity());
-        BigDecimal subValue = product.getPrice().multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
-        item.setSubvalor(subValue);
-        item.setPurchase(purchase);
-
-        total = total.add(subValue);
-        itens.add(item);
-    }
-
-    purchase.setItens(itens);
-    purchase.setValue(total);
-
-    return purchase;
-}
 
 }

@@ -7,6 +7,9 @@ public class ItemPurchaseRequestDTO {
   private Integer quantity;
 
   
+  public ItemPurchaseRequestDTO() {
+  }
+  
   public Long getProductID() {
     return productID;
   }
