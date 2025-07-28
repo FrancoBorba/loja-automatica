@@ -106,6 +106,7 @@ Therefore, for Request ➔ Entity, it's recommended to manually map in the Servi
         purchase.setItens(itens);
         purchase.setValue(totalValue);
 
+       updateStock(requestDTO.getItens());
         Purchase savedPurchase = purchaseRepository.save(purchase);
         return purchaseMapper.toResponseDTO(savedPurchase);
       }
@@ -152,6 +153,7 @@ Therefore, for Request ➔ Entity, it's recommended to manually map in the Servi
     existingPurchase.setValue(totalValue);
 
   
+     updateStock(requestDTO.getItens());
     Purchase updatedPurchase = purchaseRepository.save(existingPurchase);
     return purchaseMapper.toResponseDTO(updatedPurchase);
 
@@ -168,6 +170,18 @@ Therefore, for Request ➔ Entity, it's recommended to manually map in the Servi
 
 
 
+private void updateStock(List<ItemPurchaseRequestDTO> items) {
+    for (ItemPurchaseRequestDTO item : items) {
+        Product product = productRepository.findById(item.getProductID())
+                .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductID()));
 
+        if (product.getAmount() < item.getQuantity()) {
+            throw new RuntimeException("Insufficient stock for the product:" + product.getName());
+        }
+
+        product.setAmount(product.getAmount() - item.getQuantity());
+        productRepository.save(product);
+    }
+}
 
 }
