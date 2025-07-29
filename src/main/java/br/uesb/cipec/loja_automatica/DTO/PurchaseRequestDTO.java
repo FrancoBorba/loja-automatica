@@ -23,7 +23,13 @@ public class PurchaseRequestDTO {
     @Schema(description = "Type of payment", example = "DEBITO")
   private TypePayment payment;
 
+  @NotNull(message = "User id is required")
+  @Schema(description = "User ID who made the purchase", example = "1")
+  private Long userID;
 
+
+
+  
   @Schema(description = "Item lists")
   @NotEmpty(message = "The item List cannot be empty")
   @Valid // Validates the items since it is internal
@@ -50,6 +56,13 @@ public class PurchaseRequestDTO {
   }
   public void setStatusPurchase(StatusPurchase statusPurchase) {
     this.statusPurchase = statusPurchase;
+  }
+  public Long getUserID() {
+    return userID;
+  }
+
+  public void setUserID(Long userId) {
+    this.userID = userId;
   }
   @Override
   public String toString() {

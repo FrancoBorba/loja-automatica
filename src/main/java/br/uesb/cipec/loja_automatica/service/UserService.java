@@ -4,11 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
@@ -17,6 +16,7 @@ import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
 import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.repository.UserRepository;
+import br.uesb.cipec.loja_automatica.security.JwtUtil;
 
 @Service
 public class UserService {
@@ -27,7 +27,11 @@ public class UserService {
     @Autowired
     UserMapper mapper;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+      @Autowired 
+    private PasswordEncoder passwordEncoder;
+
+
+
 
     public UserResponseDTO create(UserRegisterDTO user){
         if (user == null) {
@@ -130,5 +134,17 @@ public class UserService {
 
         repository.delete(entity);
     }
+
+    public String authenticate(UserLoginDTO loginRequest) {
+
+    var user = repository.findByEmail(loginRequest.getEmail())
+            .orElseThrow(() -> new ResourceNotFoundException("Invalid credentials."));
+
+    if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+        return JwtUtil.generateToken(user.getEmail());
+    } else {
+        throw new ResourceNotFoundException("Invalid credentials.");
+    }
+}
     
 }

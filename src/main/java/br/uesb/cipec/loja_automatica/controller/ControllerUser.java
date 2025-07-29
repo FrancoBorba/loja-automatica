@@ -15,16 +15,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
+import br.uesb.cipec.loja_automatica.controller.docs.UserControllerDocs;
 import br.uesb.cipec.loja_automatica.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/users")
-public class ControllerUser {
+@RequestMapping("/api/users")
+@Tag(name = "User" , description = "Endpoints for managing users")
+public class ControllerUser implements UserControllerDocs {
     
     @Autowired
     UserService service;
 
+    @Override
     @GetMapping(value ="/{id}" ,
     produces = {
     MediaType.APPLICATION_JSON_VALUE,
@@ -36,6 +40,7 @@ public class ControllerUser {
         return service.findByIdResponseDTO(id);
     }
 
+     @Override
     @GetMapping(  
     produces = { 
       MediaType.APPLICATION_JSON_VALUE,
@@ -46,6 +51,7 @@ public class ControllerUser {
       return service.findAll();
     }
 
+     @Override
     @PutMapping(
         consumes =  { 
         MediaType.APPLICATION_JSON_VALUE ,
@@ -60,8 +66,9 @@ public class ControllerUser {
         return service.update(user);
     }
 
+    @Override
     @DeleteMapping(value = "/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id")  Long id){
+    public ResponseEntity<?> delete(@PathVariable("id") Long id){
         service.delete(id);
         return ResponseEntity.noContent().build(); // return the right status code (204)
     }

@@ -2,7 +2,6 @@ package br.uesb.cipec.loja_automatica.DTO;
 
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

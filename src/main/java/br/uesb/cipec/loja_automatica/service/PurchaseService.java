@@ -20,8 +20,10 @@ import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
 import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.model.Purchase;
+import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
 import br.uesb.cipec.loja_automatica.repository.PurchaseRepository;
+import br.uesb.cipec.loja_automatica.repository.UserRepository;
 
 @Service
 public class PurchaseService {
@@ -31,6 +33,9 @@ public class PurchaseService {
 
   @Autowired
    PurchaseRepository purchaseRepository;
+
+   @Autowired
+   UserRepository userRepository;
 
    @Autowired
    PurchaseMapper purchaseMapper;
@@ -74,6 +79,11 @@ Therefore, for Request ➔ Entity, it's recommended to manually map in the Servi
         purchase.setPayment(requestDTO.getPayment());
         // Take the data of criation
         purchase.setCreationDate(LocalDateTime.now());
+
+        User user = userRepository.findById(requestDTO.getUserID()).orElseThrow(
+          () -> new ResourceNotFoundException("User with ID " + requestDTO.getUserID() + " not found"));
+
+          purchase.setUser(user);
 
         List<ItemPurchase> itens = new ArrayList<>();
         BigDecimal totalValue = BigDecimal.ZERO; // start the total value with 0
