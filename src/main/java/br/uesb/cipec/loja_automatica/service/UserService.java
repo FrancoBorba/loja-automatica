@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
@@ -11,6 +14,7 @@ import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
+import br.uesb.cipec.loja_automatica.enums.UserRole;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
@@ -27,8 +31,14 @@ public class UserService {
     @Autowired
     UserMapper mapper;
 
-      @Autowired 
+    @Autowired 
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
 
 
@@ -46,6 +56,7 @@ public class UserService {
         // encrypting the password before saving the entity 
         String encryptedPassword = passwordEncoder.encode(entity.getPassword());
         entity.setPassword(encryptedPassword);
+        entity.setRole(UserRole.USER);
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
         var dto = mapper.toResponseDTO(entity);
@@ -135,16 +146,21 @@ public class UserService {
         repository.delete(entity);
     }
 
-    public String authenticate(UserLoginDTO loginRequest) {
+       public String authenticate(UserLoginDTO loginRequest) {
+    
+        var usernamePassword = new UsernamePasswordAuthenticationToken(
+            loginRequest.getEmail(),
+            loginRequest.getPassword()
+        );
 
-    var user = repository.findByEmail(loginRequest.getEmail())
-            .orElseThrow(() -> new ResourceNotFoundException("Invalid credentials."));
+  
+      var auth = this.authenticationManager.authenticate(usernamePassword);
 
-    if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-        return JwtUtil.generateToken(user.getEmail());
-    } else {
-        throw new ResourceNotFoundException("Invalid credentials.");
+    // Pega o principal, que é um UserDetails
+    UserDetails userDetails = (UserDetails) auth.getPrincipal();
+
+    // Usa o getUsername() do UserDetails, que já retorna o email
+    return jwtUtil.generateToken(userDetails.getUsername());
     }
-}
     
 }

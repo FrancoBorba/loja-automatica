@@ -4,8 +4,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.uesb.cipec.loja_automatica.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -49,6 +52,18 @@ public class User {
     public void prePersist() {
         this.dateOfRegistration = LocalDate.now();
         this.isActive = true;
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
+    public UserRole getRole() {
+      return role;
+    }
+
+    public void setRole(UserRole role) {
+      this.role = role;
     }
 
     public Long getId() {
