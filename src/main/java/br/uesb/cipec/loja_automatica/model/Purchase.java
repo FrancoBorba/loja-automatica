@@ -54,6 +54,14 @@ public class Purchase {
   private User user;
 
 
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
+  }
+
   public Long getId() {
     return id;
   }
