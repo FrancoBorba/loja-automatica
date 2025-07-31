@@ -1,6 +1,7 @@
 package br.uesb.cipec.loja_automatica.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,7 +18,7 @@ public class Token {
  
     public Token(){}
     
-    public Token(String token, LocalDate createdAt, LocalDate expiresAt, User user) {
+    public Token(String token, LocalDateTime createdAt, LocalDateTime expiresAt, User user) {
         this.token = token;
         this.createdAt = createdAt;
         this.expiresAt = expiresAt;
@@ -32,12 +33,12 @@ public class Token {
     private String token;
 
     @Column(nullable = false)
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private LocalDate expiresAt;
+    private LocalDateTime expiresAt;
 
-    private LocalDate confirmedAt;
+    private LocalDateTime confirmedAt;
 
     @ManyToOne
     @JoinColumn(nullable = false, name = "user_id")
@@ -59,27 +60,27 @@ public class Token {
         this.token = token;
     }
 
-    public LocalDate getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDate createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDate getExpiresAt() {
+    public LocalDateTime getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDate expiresAt) {
+    public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
 
-    public LocalDate getConfirmedAt() {
+    public LocalDateTime getConfirmedAt() {
         return confirmedAt;
     }
 
-    public void setConfirmedAt(LocalDate confirmedAt) {
+    public void setConfirmedAt(LocalDateTime confirmedAt) {
         this.confirmedAt = confirmedAt;
     }
 

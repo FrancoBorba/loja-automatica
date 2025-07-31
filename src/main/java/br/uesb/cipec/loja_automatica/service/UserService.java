@@ -1,7 +1,10 @@
 package br.uesb.cipec.loja_automatica.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
@@ -40,7 +45,8 @@ public class UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
-
+    @Autowired 
+    private TokenService tokenService;
 
 
     public UserResponseDTO create(UserRegisterDTO user){
@@ -60,6 +66,18 @@ public class UserService {
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
         var dto = mapper.toResponseDTO(entity);
+
+        //create a token for email validation
+        TokenDTO token = new TokenDTO(
+            UUID.randomUUID().toString(),
+            LocalDateTime.now(),
+            LocalDateTime.now().plusMinutes(30),
+            dto.getId());
+        
+        tokenService.create(token);
+        
+        //TODO send the email
+
         return dto;
     }
 
@@ -146,7 +164,7 @@ public class UserService {
         repository.delete(entity);
     }
 
-       public String authenticate(UserLoginDTO loginRequest) {
+    public String authenticate(UserLoginDTO loginRequest) {
     
         var usernamePassword = new UsernamePasswordAuthenticationToken(
             loginRequest.getEmail(),

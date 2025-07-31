@@ -1,13 +1,9 @@
 package br.uesb.cipec.loja_automatica.DTO;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.springframework.hateoas.RepresentationModel;
 
-import br.uesb.cipec.loja_automatica.model.User;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.validation.constraints.NotBlank;
 
 public class TokenDTO extends RepresentationModel<TokenDTO> {
@@ -15,18 +11,26 @@ public class TokenDTO extends RepresentationModel<TokenDTO> {
     public TokenDTO() {
     }
 
+    public TokenDTO(@NotBlank(message = "Token is required") String token, LocalDateTime createdAt, LocalDateTime expiresAt,
+            long userID) {
+        this.token = token;
+        this.createdAt = createdAt;
+        this.expiresAt = expiresAt;
+        this.userID = userID;
+    }
+
     private Long id;
 
     @NotBlank(message = "Token is required")
     private String token;
 
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
-    private LocalDate expiresAt;
+    private LocalDateTime expiresAt;
 
-    private LocalDate confirmedAt;
+    private LocalDateTime confirmedAt;
 
-    private User user;
+    private long userID;
 
     public Long getId() {
         return id;
@@ -36,37 +40,56 @@ public class TokenDTO extends RepresentationModel<TokenDTO> {
         this.id = id;
     }
 
+
     public String getToken() {
         return token;
     }
+
 
     public void setToken(String token) {
         this.token = token;
     }
 
-    public LocalDate getCreatedAt() {
+
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDate createdAt) {
+
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
-    public LocalDate getExpiresAt() {
+
+    public LocalDateTime getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDate expiresAt) {
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
 
-    public User getUser() {
-        return user;
+
+    public LocalDateTime getConfirmedAt() {
+        return confirmedAt;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+
+    public void setConfirmedAt(LocalDateTime confirmedAt) {
+        this.confirmedAt = confirmedAt;
     }
+
+
+    public long getUserID() {
+        return userID;
+    }
+
+
+    public void setUserID(long userID) {
+        this.userID = userID;
+    }
+
 
     @Override
     public int hashCode() {
@@ -77,8 +100,7 @@ public class TokenDTO extends RepresentationModel<TokenDTO> {
         result = prime * result + ((createdAt == null) ? 0 : createdAt.hashCode());
         result = prime * result + ((expiresAt == null) ? 0 : expiresAt.hashCode());
         result = prime * result + ((confirmedAt == null) ? 0 : confirmedAt.hashCode());
-        result = prime * result + ((user == null) ? 0 : user.hashCode());
+        result = prime * result + (int) (userID ^ (userID >>> 32));
         return result;
     }
-    
 }

@@ -8,15 +8,18 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.controller.docs.AuthControllerDocs;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.service.TokenService;
 import br.uesb.cipec.loja_automatica.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,10 +29,11 @@ import jakarta.validation.Valid;
 @Tag(name = "Authentication", description = "Endpoints for User Registration and Login")
 public class ControllerAuth implements AuthControllerDocs {
     
- 
-    
     @Autowired
     UserService service;
+
+    @Autowired
+    TokenService tokenService;
 
     @Override
     @PostMapping( value= "/register",
@@ -64,7 +68,11 @@ public class ControllerAuth implements AuthControllerDocs {
     }
     }
 
- 
+    @GetMapping("/confirmToken")
+    public ResponseEntity<?> confirmToken(@RequestParam("token") String token){
+        tokenService.confirmToken(token);
+        return ResponseEntity.ok(Map.of("message", "Email is confirmed sucessfully!"));
+    }
 
 
 }
