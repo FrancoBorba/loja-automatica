@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.controller.docs.PurchaseControllerDocs;
+import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.service.PurchaseService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -95,4 +97,11 @@ public class ControllerPurchase implements PurchaseControllerDocs  {
     service.delete(id);
 
   }
+  @Override
+  @GetMapping("/my-purchases")
+public List<PurchaseResponseDTO> findMyPurchases(
+    @RequestParam(required = false) StatusPurchase status
+) {
+    return service.findPurchasesByCurrentUser(status);
+}
 }

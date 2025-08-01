@@ -3,9 +3,11 @@ package br.uesb.cipec.loja_automatica.controller.docs;
 import java.util.List;
 
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
+import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -104,5 +106,24 @@ public interface PurchaseControllerDocs {
     }
   )
   public List<PurchaseResponseDTO> findAll();
+
+
+   @Operation(
+    summary = "Find all Purchase of a Especific User",
+    tags = {"Purchase"},
+    responses = {
+         @ApiResponse(description = "Success" , responseCode = "200" ,
+     content = {
+      @Content( mediaType = MediaType.APPLICATION_JSON_VALUE,
+     array = @ArraySchema(schema = @Schema(implementation = PurchaseResponseDTO.class)))}),
+      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
+      @ApiResponse(description = "Bad request" , responseCode = "400" , content = @Content),
+      @ApiResponse(description = "Unatorizhed" , responseCode = "401" , content = @Content),
+      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
+      @ApiResponse(description = "Internal server error" , responseCode = "500", content = @Content)
+    }
+  )
+public List<PurchaseResponseDTO> findMyPurchases(
+    @RequestParam(required = false) StatusPurchase status);
 
 }
