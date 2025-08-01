@@ -60,12 +60,12 @@ public class ControllerAuth implements AuthControllerDocs {
     @Override
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid UserLoginDTO loginRequest){
-     try {
-        String token = service.authenticate(loginRequest);
-        return ResponseEntity.ok(Map.of("token", token));
-    } catch (ResourceNotFoundException e) {
-        return ResponseEntity.status(401).body(e.getMessage());
-    }
+        try {
+            String token = service.authenticate(loginRequest);
+            return ResponseEntity.ok(Map.of("token", token));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
     }
 
     @GetMapping("/confirmToken")

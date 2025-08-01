@@ -8,4 +8,5 @@ import br.uesb.cipec.loja_automatica.model.User;
 
 public interface UserRepository extends JpaRepository<User, Long>{
     Optional<User> findByEmail(String email);
+    boolean existsByEmailAndEnabledTrue(String email);
 }

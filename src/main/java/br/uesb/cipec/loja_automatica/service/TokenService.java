@@ -9,7 +9,6 @@ import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.TokenMapper;
-import br.uesb.cipec.loja_automatica.model.Token;
 import br.uesb.cipec.loja_automatica.repository.TokenRepository;
 
 @Service
@@ -20,6 +19,9 @@ public class TokenService {
     
     @Autowired
     TokenMapper mapper;
+
+    @Autowired
+    UserConfirmationService userConfirmationService;
 
     public TokenDTO create(TokenDTO token){
         if(token == null){
@@ -46,8 +48,10 @@ public class TokenService {
 
     public void confirmToken(String token){
         //check if the token exists        
-        Token confirmedToken = repository.findByToken(token)
-            .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
+        TokenDTO confirmedToken = findByToken(token);
+        if(confirmedToken == null){
+            throw new IllegalStateException("Token not found");
+        }
 
         //check if the user is already verified
 
@@ -59,9 +63,11 @@ public class TokenService {
 
         //if everything is ok update the confirmation time
         confirmedToken.setConfirmedAt(LocalDateTime.now());
-        repository.save(confirmedToken);
+        var entity = mapper.toEntity(confirmedToken);
+        repository.save(entity);
         
         //enable the user
+        userConfirmationService.enableUser(confirmedToken.getUserID());        
     }
 
 }

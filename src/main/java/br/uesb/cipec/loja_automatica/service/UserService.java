@@ -79,7 +79,6 @@ public class UserService {
         
         tokenService.create(token);
         
-        //TODO send the email
         emailService.send(dto.getEmail(), token.getToken());
 
         return dto;
@@ -170,19 +169,22 @@ public class UserService {
 
     public String authenticate(UserLoginDTO loginRequest) {
     
+        if(!repository.existsByEmailAndEnabledTrue(loginRequest.getEmail())){
+            throw new IllegalStateException("Credentials not validated");
+        }
+
         var usernamePassword = new UsernamePasswordAuthenticationToken(
             loginRequest.getEmail(),
             loginRequest.getPassword()
         );
-
   
-      var auth = this.authenticationManager.authenticate(usernamePassword);
+        var auth = this.authenticationManager.authenticate(usernamePassword);
 
-    // Pega o principal, que é um UserDetails
-    UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        // Pega o principal, que é um UserDetails
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-    // Usa o getUsername() do UserDetails, que já retorna o email
-    return jwtUtil.generateToken(userDetails.getUsername());
+        // Usa o getUsername() do UserDetails, que já retorna o email
+        return jwtUtil.generateToken(userDetails.getUsername());
     }
-    
+
 }
