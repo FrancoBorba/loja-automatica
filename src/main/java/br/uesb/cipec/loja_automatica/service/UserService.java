@@ -48,6 +48,9 @@ public class UserService {
     @Autowired 
     private TokenService tokenService;
 
+    @Autowired
+    private EmailService emailService;
+
 
     public UserResponseDTO create(UserRegisterDTO user){
         if (user == null) {
@@ -77,6 +80,7 @@ public class UserService {
         tokenService.create(token);
         
         //TODO send the email
+        emailService.send(dto.getEmail(), token.getToken());
 
         return dto;
     }
