@@ -1,11 +1,5 @@
 package br.uesb.cipec.loja_automatica.controller.docs;
 
-import java.util.List;
-
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,117 +7,56 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 
+@Tag(name = "Purchase History", description = "Endpoints for viewing and managing historical purchases")
+@SecurityRequirement(name = "bearerAuth")
 public interface PurchaseControllerDocs {
 
-    @Operation(
-    summary = "Find by id" ,
-    description = "Finds a especification purchase by your ID",
-    tags = {"Purchase"},
-    responses = {
-      @ApiResponse(description = "Success" , responseCode = "200" ,
-       content = @Content(
-        schema = @Schema(implementation = PurchaseResponseDTO.class)
-       )),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad Request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unautorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
-    }
-  ) 
-  public PurchaseResponseDTO findByID(Long id);
+    @Operation(summary = "Find the logged-in user's purchase history")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Purchase history found successfully",
+                     content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = PurchaseResponseDTO.class)))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - User must be logged in", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
+    })
+    List<PurchaseResponseDTO> findMyPurchases(@RequestParam(required = false) StatusPurchase status);
 
-  
-     @Operation(
-    summary = "Adds a new Purchase" ,
-    description = "Adding a Purchase ",
-    tags = {"Purchase"},
-    responses = {
-      @ApiResponse(description = "Success" , responseCode = "200" ,
-       content = @Content(
-        schema = @Schema(implementation = PurchaseResponseDTO.class)
-       )),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad Request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unautorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
-    }
-  ) 
-  public PurchaseResponseDTO create(PurchaseRequestDTO purchaseRequestDTO);
+    @Operation(summary = "Find all purchases (Admin only)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "List of all purchases found successfully",
+                     content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = PurchaseResponseDTO.class)))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - User must be logged in", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Forbidden - User must be an Admin", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
+    })
+    List<PurchaseResponseDTO> findAll();
 
-       @Operation(
-    summary = "Update a new Purchase" ,
-    description = "Update a Purchase ",
-    tags = {"Purchase"},
-    responses = {
-      @ApiResponse(description = "Success" , responseCode = "200" ,
-       content = @Content(
-        schema = @Schema(implementation = PurchaseResponseDTO.class)
-       )),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad Request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unautorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
-    }
-  ) 
-  public PurchaseResponseDTO update(Long id ,PurchaseRequestDTO purchaseRequestDTO);
+    @Operation(summary = "Find a specific purchase by ID (Admin or Owner)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Purchase found successfully",
+                     content = @Content(schema = @Schema(implementation = PurchaseResponseDTO.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - User must be logged in", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Forbidden - User is not the owner or an Admin", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Purchase not found with the given ID", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
+    })
+    PurchaseResponseDTO findByID(@PathVariable Long id);
 
-     @Operation(
-    summary = "Delete a purchase" ,
-    description = "Delete a purchase ",
-    tags = {"Purchase"},
-    responses = {
-      @ApiResponse(description = "Success" , responseCode = "200" ,
-       content = @Content(
-        schema = @Schema(implementation = PurchaseResponseDTO.class)
-       )),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad Request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unautorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
-    }
-  ) 
-  public void delete(Long id);
-
-    @Operation(
-    summary = "Find all Purchase",
-    tags = {"Purchase"},
-    responses = {
-         @ApiResponse(description = "Success" , responseCode = "200" ,
-     content = {
-      @Content( mediaType = MediaType.APPLICATION_JSON_VALUE,
-     array = @ArraySchema(schema = @Schema(implementation = PurchaseResponseDTO.class)))}),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unatorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal server error" , responseCode = "500", content = @Content)
-    }
-  )
-  public List<PurchaseResponseDTO> findAll();
-
-
-   @Operation(
-    summary = "Find all Purchase of a Especific User",
-    tags = {"Purchase"},
-    responses = {
-         @ApiResponse(description = "Success" , responseCode = "200" ,
-     content = {
-      @Content( mediaType = MediaType.APPLICATION_JSON_VALUE,
-     array = @ArraySchema(schema = @Schema(implementation = PurchaseResponseDTO.class)))}),
-      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
-      @ApiResponse(description = "Bad request" , responseCode = "400" , content = @Content),
-      @ApiResponse(description = "Unatorizhed" , responseCode = "401" , content = @Content),
-      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
-      @ApiResponse(description = "Internal server error" , responseCode = "500", content = @Content)
-    }
-  )
-public List<PurchaseResponseDTO> findMyPurchases(
-    @RequestParam(required = false) StatusPurchase status);
-
+    @Operation(summary = "Delete a historical purchase (Admin or Owner)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Purchase deleted successfully", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - User must be logged in", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Forbidden - User is not the owner or an Admin", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Purchase not found with the given ID", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
+    })
+    ResponseEntity<?> delete(@PathVariable Long id);
 }

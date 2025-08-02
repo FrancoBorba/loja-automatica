@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import br.uesb.cipec.loja_automatica.DTO.ItemPurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
+import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
@@ -45,9 +46,12 @@ public class PurchaseService {
    @Autowired
    PurchaseMapper purchaseMapper;
 
+   @Autowired
+   AuthenticationFacade authenticationFacade;
+
        // For adding loggers in he applicaiton
     // We will use the logs at the info level here
-    private Logger logger = LoggerFactory.getLogger(ProductService.class.getName());
+    private Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());
 
     public List<PurchaseResponseDTO> findAll(){
       logger.info("Find all Purchase");
@@ -78,10 +82,8 @@ Starting to develop based on the user flow, I changed from create to updateActiv
      public PurchaseResponseDTO updateActivePurchase(PurchaseRequestDTO requestDTO) {
     logger.info("Creating or updating a purchase (active cart).");
 
-    //  Step 1: Find the currently logged-in user 
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-    User currentUser = userDetails.getUser();
+    //   Find the currently logged-in user 
+    User currentUser = authenticationFacade.getCurrentUser();
 
     //  Find an existing active cart or create a new one
     Purchase purchase;
@@ -143,13 +145,10 @@ Starting to develop based on the user flow, I changed from create to updateActiv
     return purchaseMapper.toResponseDTO(savedPurchase);
 }
 
+
   public PurchaseResponseDTO updatePurchase(Long id ,PurchaseRequestDTO requestDTO){
      logger.info("Update a purchase");
-        //Finding out who the User is by their Token and associating it with a purchase
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        User currentUser = userDetails.getUser();
-       
+       User currentUser = authenticationFacade.getCurrentUser();
 
         Purchase existingPurchase = purchaseRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Purchase with ID " + id + " not found"));
@@ -201,9 +200,16 @@ Starting to develop based on the user flow, I changed from create to updateActiv
       }
 
       public void delete(Long id){
-         logger.info("Delete a purchase");
+        logger.info("Delete a purchase");
+       User currentUser = authenticationFacade.getCurrentUser();
+
         Purchase purchase = purchaseRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Purchase with ID " + id + " not found"));
+
+        if (!purchase.getUser().getId().equals(currentUser.getId())) {
+        throw new AccessDeniedException("User is not authorized to delete this purchase.");
+        }
+
 
         purchaseRepository.delete(purchase);
       }
@@ -238,6 +244,51 @@ public List<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase statu
 
 
 
+public Optional<PurchaseResponseDTO> findActiveCartByUser() {
+    logger.info("Finding active cart for the current user.");
+
+    // Pega o usuário logado de forma segura
+    User currentUser = authenticationFacade.getCurrentUser();
+    if (currentUser == null) {
+        return Optional.empty();
+    }
+
+    // Procura no banco pelo carrinho com status AGUARDANDO_PAGAMENTO para este usuário
+    return purchaseRepository
+        .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
+        .stream()
+        .findFirst() // Pega o primeiro que encontrar (deve ser apenas um)
+        .map(purchaseMapper::toResponseDTO); // Converte para DTO se um carrinho for encontrado
+}
+
+public PurchaseResponseDTO checkout() {
+    logger.info("Checking out the active cart for the current user.");
+
+    // 1. Pega o usuário logado
+    User currentUser = authenticationFacade.getCurrentUser();
+
+    // 2. Busca o carrinho ativo (o que está AGUARDANDO_PAGAMENTO)
+    Purchase cartToCheckout = purchaseRepository
+        .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
+        .stream().findFirst()
+        .orElseThrow(() -> new ResourceNotFoundException("No active cart found to checkout."));
+
+    // 3. Validações de negócio
+    if (cartToCheckout.getItens().isEmpty()) {
+        throw new IllegalStateException("Cannot checkout an empty cart.");
+    }
+    
+    // TODO: No futuro, a lógica de pagamento entraria aqui.
+
+    // 4. Muda o status e salva
+    cartToCheckout.setStatus(StatusPurchase.PAGO);
+    Purchase savedPurchase = purchaseRepository.save(cartToCheckout);
+
+    return purchaseMapper.toResponseDTO(savedPurchase);
+}
+
+
+
 private void updateStock(List<ItemPurchaseRequestDTO> items) {
     for (ItemPurchaseRequestDTO item : items) {
         Product product = productRepository.findById(item.getProductID())
@@ -252,4 +303,5 @@ private void updateStock(List<ItemPurchaseRequestDTO> items) {
     }
 }
 
+ 
 }
