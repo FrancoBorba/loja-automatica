@@ -45,6 +45,8 @@ public class User {
     @Column(nullable = false)
     private boolean isActive;
 
+    private boolean enabled;
+
     @OneToMany(mappedBy = "user")
     private List<Purchase> purchase = new ArrayList<>();
 
@@ -52,6 +54,7 @@ public class User {
     public void prePersist() {
         this.dateOfRegistration = LocalDate.now();
         this.isActive = true;
+        this.enabled = false;
     }
 
     @Enumerated(EnumType.STRING)
@@ -122,6 +125,22 @@ public class User {
         this.password = password;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public List<Purchase> getPurchase() {
+        return purchase;
+    }
+
+    public void setPurchase(List<Purchase> purchase) {
+        this.purchase = purchase;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -129,9 +148,13 @@ public class User {
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result + ((email == null) ? 0 : email.hashCode());
+        result = prime * result + ((password == null) ? 0 : password.hashCode());
         result = prime * result + ((dateOfBirth == null) ? 0 : dateOfBirth.hashCode());
         result = prime * result + ((dateOfRegistration == null) ? 0 : dateOfRegistration.hashCode());
         result = prime * result + (isActive ? 1231 : 1237);
+        result = prime * result + (enabled ? 1231 : 1237);
+        result = prime * result + ((purchase == null) ? 0 : purchase.hashCode());
+        result = prime * result + ((role == null) ? 0 : role.hashCode());
         return result;
     }
 
@@ -159,6 +182,11 @@ public class User {
                 return false;
         } else if (!email.equals(other.email))
             return false;
+        if (password == null) {
+            if (other.password != null)
+                return false;
+        } else if (!password.equals(other.password))
+            return false;
         if (dateOfBirth == null) {
             if (other.dateOfBirth != null)
                 return false;
@@ -171,7 +199,17 @@ public class User {
             return false;
         if (isActive != other.isActive)
             return false;
+        if (enabled != other.enabled)
+            return false;
+        if (purchase == null) {
+            if (other.purchase != null)
+                return false;
+        } else if (!purchase.equals(other.purchase))
+            return false;
+        if (role != other.role)
+            return false;
         return true;
     }
 
+    
 }

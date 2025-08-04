@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/loja_automatica
     username: postgres
-    password: 247935
+    password: 1234
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,3 +23,10 @@ spring-doc:
 
 server:
   port: 8080
+
+spring.mail.host: smtp.gmail.com
+spring.mail.port: 587
+spring.mail.username: loja.peticomputacao@gmail.com 
+spring.mail.password: uncxecldibjxvsbf
+spring.mail.properties.mail.smtp.auth: true
+spring.mail.properties.mail.smtp.starttls.enable: true

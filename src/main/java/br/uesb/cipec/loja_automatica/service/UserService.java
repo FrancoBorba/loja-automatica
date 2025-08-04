@@ -1,7 +1,10 @@
 package br.uesb.cipec.loja_automatica.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
@@ -40,9 +45,6 @@ public class UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
-
-
-
     public UserResponseDTO create(UserRegisterDTO user){
         if (user == null) {
             throw new RequiredObjectIsNullException("User cannot be null.");
@@ -60,6 +62,7 @@ public class UserService {
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
         var dto = mapper.toResponseDTO(entity);
+
         return dto;
     }
 
@@ -139,28 +142,42 @@ public class UserService {
         return dto;
     }
   
-
+    public boolean isUserEnabled(Long userId) {
+        return repository.isUserEnabled(userId)
+                .orElseThrow(() -> new  ResourceNotFoundException("User not found"));
+    }
+    
     public void delete(Long id){
         User entity = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
         repository.delete(entity);
     }
 
-       public String authenticate(UserLoginDTO loginRequest) {
+    public String authenticate(UserLoginDTO loginRequest) {
     
+        if(!repository.existsByEmailAndEnabledTrue(loginRequest.getEmail())){
+            throw new IllegalStateException("Credentials not validated");
+        }
+
         var usernamePassword = new UsernamePasswordAuthenticationToken(
             loginRequest.getEmail(),
             loginRequest.getPassword()
         );
-
   
-      var auth = this.authenticationManager.authenticate(usernamePassword);
+        var auth = this.authenticationManager.authenticate(usernamePassword);
 
-    // Pega o principal, que é um UserDetails
-    UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        // Pega o principal, que é um UserDetails
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
 
-    // Usa o getUsername() do UserDetails, que já retorna o email
-    return jwtUtil.generateToken(userDetails.getUsername());
+        // Usa o getUsername() do UserDetails, que já retorna o email
+        return jwtUtil.generateToken(userDetails.getUsername());
     }
-    
+
+    public void enableUser(Long userID){
+        var user = repository.findById(userID);
+        User entity = user.get();
+        entity.setEnabled(true);
+        repository.save(entity);
+    }
+
 }
