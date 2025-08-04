@@ -20,6 +20,7 @@ import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.controller.docs.AuthControllerDocs;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.service.TokenService;
+import br.uesb.cipec.loja_automatica.service.UserConfirmationService;
 import br.uesb.cipec.loja_automatica.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,6 +36,9 @@ public class ControllerAuth implements AuthControllerDocs {
     @Autowired
     TokenService tokenService;
 
+    @Autowired
+    UserConfirmationService userConfirmationService;
+
     @Override
     @PostMapping( value= "/register",
         consumes =  { 
@@ -47,8 +51,13 @@ public class ControllerAuth implements AuthControllerDocs {
         MediaType.APPLICATION_YAML_VALUE}
     )
     public ResponseEntity<?> register(@RequestBody @Valid UserRegisterDTO user){
-        try { 
-        UserResponseDTO userResponse = service.create(user);
+    try { 
+        // create the user 
+        UserResponseDTO userResponse = service.create(user); 
+      
+        //send an email validation
+        userConfirmationService.sendConfirmationToken(userResponse.getEmail());
+      
         return ResponseEntity.ok(userResponse);
     } catch (IllegalArgumentException e) {
         // Captura o erro do service e retorna uma resposta 400 Bad Request
@@ -70,8 +79,14 @@ public class ControllerAuth implements AuthControllerDocs {
 
     @GetMapping("/confirmToken")
     public ResponseEntity<?> confirmToken(@RequestParam("token") String token){
-        tokenService.confirmToken(token);
+        userConfirmationService.confirmUserEmail(token);
         return ResponseEntity.ok(Map.of("message", "Email is confirmed sucessfully!"));
+    }
+
+    @PostMapping("/resendConfirmation")
+    public ResponseEntity<?> resendConfirmation(@RequestBody String email){
+        userConfirmationService.sendConfirmationToken(email);
+        return ResponseEntity.ok(Map.of("message", "The new link will be sent to the email."));
     }
 
 

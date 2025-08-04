@@ -1,6 +1,7 @@
 package br.uesb.cipec.loja_automatica.service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,6 @@ public class TokenService {
     @Autowired
     TokenMapper mapper;
 
-    @Autowired
-    UserConfirmationService userConfirmationService;
 
     public TokenDTO create(TokenDTO token){
         if(token == null){
@@ -53,21 +52,17 @@ public class TokenService {
             throw new IllegalStateException("Token not found");
         }
 
-        //check if the user is already verified
-
         //check if the token has expired
         LocalDateTime expiresAt = confirmedToken.getExpiresAt();
         if(expiresAt.isBefore(LocalDateTime.now())){
-            throw new IllegalStateException("Token expired");
+            throw new IllegalStateException("Token expired. Re-send the confirmation link?");
         }
 
         //if everything is ok update the confirmation time
         confirmedToken.setConfirmedAt(LocalDateTime.now());
         var entity = mapper.toEntity(confirmedToken);
         repository.save(entity);
-        
-        //enable the user
-        userConfirmationService.enableUser(confirmedToken.getUserID());        
+    
     }
 
 }

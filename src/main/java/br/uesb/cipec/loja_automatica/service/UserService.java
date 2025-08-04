@@ -45,13 +45,6 @@ public class UserService {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Autowired 
-    private TokenService tokenService;
-
-    @Autowired
-    private EmailService emailService;
-
-
     public UserResponseDTO create(UserRegisterDTO user){
         if (user == null) {
             throw new RequiredObjectIsNullException("User cannot be null.");
@@ -69,17 +62,6 @@ public class UserService {
         repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields
 
         var dto = mapper.toResponseDTO(entity);
-
-        //create a token for email validation
-        TokenDTO token = new TokenDTO(
-            UUID.randomUUID().toString(),
-            LocalDateTime.now(),
-            LocalDateTime.now().plusMinutes(30),
-            dto.getId());
-        
-        tokenService.create(token);
-        
-        emailService.send(dto.getEmail(), token.getToken());
 
         return dto;
     }
@@ -160,7 +142,11 @@ public class UserService {
         return dto;
     }
   
-
+    public boolean isUserEnabled(Long userId) {
+        return repository.isUserEnabled(userId)
+                .orElseThrow(() -> new  ResourceNotFoundException("User not found"));
+    }
+    
     public void delete(Long id){
         User entity = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
@@ -185,6 +171,13 @@ public class UserService {
 
         // Usa o getUsername() do UserDetails, que já retorna o email
         return jwtUtil.generateToken(userDetails.getUsername());
+    }
+
+    public void enableUser(Long userID){
+        var user = repository.findById(userID);
+        User entity = user.get();
+        entity.setEnabled(true);
+        repository.save(entity);
     }
 
 }
