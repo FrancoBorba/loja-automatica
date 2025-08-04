@@ -49,6 +49,9 @@ public class PurchaseService {
    @Autowired
    AuthenticationFacade authenticationFacade;
 
+   @Autowired
+   StockService stockService;
+
        // For adding loggers in he applicaiton
     // We will use the logs at the info level here
     private Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());
@@ -278,6 +281,7 @@ public PurchaseResponseDTO checkout() {
         throw new IllegalStateException("Cannot checkout an empty cart.");
     }
     
+    stockService.debitStock(cartToCheckout.getItens());
     // TODO: No futuro, a lógica de pagamento entraria aqui.
 
     // 4. Muda o status e salva
