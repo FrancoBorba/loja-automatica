@@ -40,11 +40,11 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN") //Update product
 
             .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN") // Delete product
-            .requestMatchers("/users/**").hasRole("ADMIN") //Manage all users
+            .requestMatchers("api/users/**").hasRole("ADMIN") //Manage all users
 
             
-            // ---- USER Endpoints ----
-            .requestMatchers("/api/purchase/**").hasRole("USER") // Make/veecompras
+            // ---- PURCHASE Endpoints ----
+           .requestMatchers("/api/purchase/**").authenticated() 
             
             // ---- Final rule ----
             .anyRequest().authenticated() // Any other request requires authentication
