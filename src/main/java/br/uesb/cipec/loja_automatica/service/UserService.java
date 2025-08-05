@@ -1,24 +1,20 @@
 package br.uesb.cipec.loja_automatica.service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
+import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.UserRole;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
@@ -41,6 +37,9 @@ public class UserService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -113,12 +112,8 @@ public class UserService {
     }
 
     public UserResponseDTO update(UserUpdateDTO user){
-        if(user == null){
-         throw new RequiredObjectIsNullException("User cannot be null.");
-        }
-
-        User entity = repository.findById(user.getId()).
-        orElseThrow(()-> new ResourceNotFoundException("User not found"));
+      
+        User entity = authenticationFacade.getCurrentUser();
   
         if(user.getEmail() != null){
             Optional<User> userWithSameEmail = repository.findByEmail(user.getEmail());
@@ -147,11 +142,15 @@ public class UserService {
                 .orElseThrow(() -> new  ResourceNotFoundException("User not found"));
     }
     
-    public void delete(Long id){
-        User entity = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found"));
+   public void deleteMyAccount() {
+    // Take the logged user
+    User currentUser = authenticationFacade.getCurrentUser();
 
-        repository.delete(entity);
-    }
+    // Instead of deleting the tuple we deactivate it
+    currentUser.setActive(false); ;
+    repository.save(currentUser);
+}
+
 
     public String authenticate(UserLoginDTO loginRequest) {
     
@@ -172,6 +171,15 @@ public class UserService {
         // Usa o getUsername() do UserDetails, que já retorna o email
         return jwtUtil.generateToken(userDetails.getUsername());
     }
+
+
+    public UserResponseDTO getMyProfile() {
+    // Usa a facade para pegar o usuário logado de forma segura
+    User currentUser = authenticationFacade.getCurrentUser();
+    
+    // Mapeia a entidade para um DTO de resposta seguro (sem a senha)
+    return mapper.toResponseDTO(currentUser);
+}
 
     public void enableUser(Long userID){
         var user = repository.findById(userID);
