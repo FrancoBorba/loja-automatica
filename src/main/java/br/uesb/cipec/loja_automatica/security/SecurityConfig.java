@@ -40,7 +40,10 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN") //Update product
 
             .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN") // Delete product
-            .requestMatchers("api/users/**").hasRole("ADMIN") //Manage all users
+           
+            .requestMatchers("/api/users/me/**").authenticated() 
+
+            .requestMatchers("/api/users/**").hasRole("ADMIN") 
 
             
             // ---- PURCHASE Endpoints ----

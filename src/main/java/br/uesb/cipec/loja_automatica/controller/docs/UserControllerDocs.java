@@ -89,5 +89,23 @@ public interface UserControllerDocs {
       @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
     }
   ) 
-  public ResponseEntity<?> delete(@PathVariable("id")  Long id);
+  public ResponseEntity<?> delete();
+
+      @Operation(
+    summary = "Finding the user itself" ,
+    description = "Finding itself ",
+    tags = {"User"},
+    responses = {
+      @ApiResponse(description = "Success" , responseCode = "200" ,
+       content = @Content(
+        schema = @Schema(implementation = UserResponseDTO.class)
+       )),
+      @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
+      @ApiResponse(description = "Bad Request" , responseCode = "400" , content = @Content),
+      @ApiResponse(description = "Unautorizhed" , responseCode = "401" , content = @Content),
+      @ApiResponse(description = "Not found" , responseCode = "404" , content = @Content),
+      @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
+    }
+      )
+  public UserResponseDTO getMyProfile();
 }

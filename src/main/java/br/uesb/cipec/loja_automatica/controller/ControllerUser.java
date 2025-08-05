@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,7 @@ public class ControllerUser implements UserControllerDocs {
     MediaType.APPLICATION_YAML_VALUE
     }
     )
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponseDTO findByID( @PathVariable("id") Long id ){
         return service.findByIdResponseDTO(id);
     }
@@ -47,12 +49,13 @@ public class ControllerUser implements UserControllerDocs {
       MediaType.APPLICATION_XML_VALUE ,
       MediaType.APPLICATION_YAML_VALUE}
       )
+  @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponseDTO> findAll(){ 
       return service.findAll();
     }
 
      @Override
-    @PutMapping(
+    @PutMapping( value = "/me" ,
         consumes =  { 
         MediaType.APPLICATION_JSON_VALUE ,
         MediaType.APPLICATION_XML_VALUE ,
@@ -67,9 +70,16 @@ public class ControllerUser implements UserControllerDocs {
     }
 
     @Override
-    @DeleteMapping(value = "/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") Long id){
-        service.delete(id);
+    @DeleteMapping("/me")
+    public ResponseEntity<?> delete(){
+        service.deleteMyAccount();
         return ResponseEntity.noContent().build(); // return the right status code (204)
+    }
+
+
+   
+    @GetMapping("/me")
+    public UserResponseDTO getMyProfile() {
+        return service.getMyProfile();
     }
 }
