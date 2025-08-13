@@ -5,6 +5,7 @@ import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
+import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 import br.uesb.cipec.loja_automatica.model.Purchase;
 import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.payment.StripeService;
@@ -17,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,6 +117,33 @@ public class PurchaseService {
         
         // Create a session of payment
         return stripeService.creatCheckoutSesion(cartToCheckout);
+    }
+
+
+    @Transactional
+    public void confirmPayment(Long purchaseId){
+         logger.info("Confirm Paymente for the active cart.");
+
+       
+
+         Purchase purchaseToConfirm = purchaseRepository.findById(purchaseId)
+         .orElseThrow(() -> new ResourceNotFoundException("No active cart found to checkout."));
+
+    if (purchaseToConfirm.getStatus() == StatusPurchase.AGUARDANDO_PAGAMENTO) {
+        
+     
+        stockService.debitStock(purchaseToConfirm.getItens());
+        
+        purchaseToConfirm.setStatus(StatusPurchase.PAGO);
+        purchaseRepository.save(purchaseToConfirm);
+        
+        logger.info("Purchase {} successfully updated to PAID.", purchaseId);
+        
+        // TODO: Chamar um NotificationService para enviar e-mail de confirmação.
+    } else {
+        logger.warn("Webhook received for a purchase that was not in AGUARDANDO_PAGAMENTO state. Purchase ID: {}. Current status: {}", 
+                    purchaseId, purchaseToConfirm.getStatus());
+    }
     }
 
   
