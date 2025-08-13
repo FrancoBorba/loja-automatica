@@ -48,6 +48,9 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             
             // ---- PURCHASE Endpoints ----
            .requestMatchers("/api/purchase/**").authenticated() 
+
+           .requestMatchers("/payment-success").permitAll()
+           .requestMatchers("/paymente-cancel").permitAll()
             
             // ---- Final rule ----
             .anyRequest().authenticated() // Any other request requires authentication
