@@ -3,6 +3,7 @@ package br.uesb.cipec.loja_automatica.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -20,8 +21,21 @@ public class SecurityConfig {
 
   @Autowired
   private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  @Bean
+  @Order(1)
+  public SecurityFilterChain webhookFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/webhooks/**") 
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .anyRequest().permitAll() 
+            );
+        return http.build();
+    }
     
   @Bean
+  @Order(2)
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf.disable())
@@ -51,6 +65,8 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
 
            .requestMatchers("/payment-success").permitAll()
            .requestMatchers("/paymente-cancel").permitAll()
+
+        
             
             // ---- Final rule ----
             .anyRequest().authenticated() // Any other request requires authentication

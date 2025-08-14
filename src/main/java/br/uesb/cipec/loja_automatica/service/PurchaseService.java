@@ -131,15 +131,14 @@ public class PurchaseService {
 
     if (purchaseToConfirm.getStatus() == StatusPurchase.AGUARDANDO_PAGAMENTO) {
         
-     
-        stockService.debitStock(purchaseToConfirm.getItens());
+        stockService.debitStock(purchaseToConfirm.getItens());  
         
         purchaseToConfirm.setStatus(StatusPurchase.PAGO);
         purchaseRepository.save(purchaseToConfirm);
         
         logger.info("Purchase {} successfully updated to PAID.", purchaseId);
         
-        // TODO: Chamar um NotificationService para enviar e-mail de confirmação.
+        // TODO: Chamar um NotificationService para enviar e-mail de confirmação. 
     } else {
         logger.warn("Webhook received for a purchase that was not in AGUARDANDO_PAGAMENTO state. Purchase ID: {}. Current status: {}", 
                     purchaseId, purchaseToConfirm.getStatus());
