@@ -15,9 +15,22 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import br.uesb.cipec.loja_automatica.exception.ActiveTokenExistsException;
+import br.uesb.cipec.loja_automatica.exception.BadCredentialsException;
+import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
+import br.uesb.cipec.loja_automatica.exception.EmailSendingException;
+import br.uesb.cipec.loja_automatica.exception.EmptyCartException;
 import br.uesb.cipec.loja_automatica.exception.ExceptionResponse;
+import br.uesb.cipec.loja_automatica.exception.InsufficientStockException;
+import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseStatusException;
+import br.uesb.cipec.loja_automatica.exception.ProductInUseException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.exception.TokenAlreadyConfirmedException;
+import br.uesb.cipec.loja_automatica.exception.TokenExpiredException;
+import br.uesb.cipec.loja_automatica.exception.UserAlreadyVerifiedException;
 
 @ControllerAdvice // Interprets all exceptions thrown in the controllers
 @RestController // Indicates that the return is in json
@@ -53,7 +66,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * This method catches any status code 400 
      * error and returns the appropriate json  
      */
-    @ExceptionHandler(RequiredObjectIsNullException.class)
+    @ExceptionHandler({
+        EmptyCartException.class, 
+        InsufficientStockException.class, 
+        InvalidProductDataException.class, 
+        InvalidPurchaseQuantityException.class, 
+        TokenExpiredException.class, 
+        RequiredObjectIsNullException.class})
     public ResponseEntity<ExceptionResponse> handleRequiredObjectIsNullException(RequiredObjectIsNullException ex, WebRequest request) {
         ExceptionResponse response = new ExceptionResponse(
                 new Date(),
@@ -61,6 +80,40 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 request.getDescription(false)
         );
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler({
+        EmailAlreadyInUseException.class,
+        ProductInUseException.class,
+        InvalidPurchaseStatusException.class,
+        UserAlreadyVerifiedException.class,
+        ActiveTokenExistsException.class,
+        TokenAlreadyConfirmedException.class
+    })
+    public final ResponseEntity<ExceptionResponse> handleConflictExceptions(Exception ex, WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+                new Date(),
+                ex.getMessage(),
+                request.getDescription(false));
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.CONFLICT);
+    }
+    
+    @ExceptionHandler({BadCredentialsException.class})
+    public final ResponseEntity<ExceptionResponse> handleUnauthorizedExceptions(Exception ex, WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+                new Date(),
+                ex.getMessage(),
+                request.getDescription(false));
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler({EmailSendingException.class})
+    public final ResponseEntity<ExceptionResponse> handleBadGatewayExceptions(Exception ex, WebRequest request) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+                new Date(),
+                ex.getMessage(),
+                request.getDescription(false));
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_GATEWAY);
     }
 
     /**
