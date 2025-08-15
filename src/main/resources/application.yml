@@ -5,7 +5,6 @@ spring:
     url: jdbc:postgresql://localhost:5432/loja_automatica
     username: postgres
     password: 247935
-
   jpa:
     hibernate:
       ddl-auto: update

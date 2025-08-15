@@ -1,9 +1,12 @@
 package br.uesb.cipec.loja_automatica.service;
 
 
-import java.util.List;
+
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -103,14 +106,11 @@ public class UserService {
         return dto;
     }
 
-    public List<UserResponseDTO> findAll(){
-        var entities = repository.findAll();
+    public Page<UserResponseDTO> findAll(Pageable pageable){
+        Page<User> users = repository.findAll(pageable);
 
-        var users = entities.stream()
-        .map(mapper::toResponseDTO)
-        .toList();
 
-        return users;
+        return users.map(mapper::toResponseDTO);
     }
 
     public UserResponseDTO update(UserUpdateDTO user){
