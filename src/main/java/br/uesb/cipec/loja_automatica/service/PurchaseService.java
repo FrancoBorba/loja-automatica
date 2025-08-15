@@ -3,7 +3,7 @@ package br.uesb.cipec.loja_automatica.service;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
-import br.uesb.cipec.loja_automatica.exception.*; // Importa todas as exceções customizadas da sua colega
+import br.uesb.cipec.loja_automatica.exception.*;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
 import br.uesb.cipec.loja_automatica.model.Purchase;
 import br.uesb.cipec.loja_automatica.model.User;
@@ -15,10 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -41,14 +40,8 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public Page<PurchaseResponseDTO> findAll(Pageable pageable) {
-
-
         logger.info("Finding all purchases (Admin operation).");
-
-        Page<Purchase> purchases = purchaseRepository.findAll(pageable);
-
-        return purchases.map(purchaseMapper::toResponseDTO);
-
+        return purchaseRepository.findAll(pageable).map(purchaseMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
@@ -59,29 +52,22 @@ public class PurchaseService {
     }
 
     @Transactional(readOnly = true)
-
-    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(Pageable pageable , StatusPurchase status) {
+    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase status, Pageable pageable) {
         logger.info("Finding purchases for current user. Filter status: {}", status);
         User currentUser = authenticationFacade.getCurrentUser();
-        Page<Purchase> purchases;
+        Page<Purchase> purchasePage;
         if (status != null) {
-            purchases = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status , pageable);
+            purchasePage = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status, pageable);
         } else {
-            purchases = purchaseRepository.findByUserId(currentUser.getId() , pageable);
+            purchasePage = purchaseRepository.findByUserId(currentUser.getId(), pageable);
         }
-        return purchases.map(purchaseMapper::toResponseDTO);
-
+        return purchasePage.map(purchaseMapper::toResponseDTO);
     }
     
     @Transactional
     public void delete(Long id) {
         logger.info("Deleting purchase with ID: {}", id);
-        User currentUser = authenticationFacade.getCurrentUser();
         Purchase purchase = findPurchaseById(id);
-
-        if (!purchase.getUser().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("User is not authorized to delete this purchase.");
-        }
         purchaseRepository.delete(purchase);
     }
 
@@ -91,24 +77,30 @@ public class PurchaseService {
     public Optional<PurchaseResponseDTO> findActiveCartByUser() {
         logger.info("Finding active cart for the current user.");
         User currentUser = authenticationFacade.getCurrentUser();
+        
+        // CORREÇÃO: Usando o método que já existe e retorna Optional
         return purchaseRepository
-            .findFirstByUserIdAndStatusOrderByCreationDateDesc(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
+            .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
             .map(purchaseMapper::toResponseDTO);
     }
 
     @Transactional
     public String checkout() throws StripeException {
         logger.info("Initiating checkout for the active cart.");
+        
+        // CORREÇÃO: Usando o método que já existe e retorna Optional
         Purchase cartToCheckout = purchaseRepository
-            .findFirstByUserIdAndStatusOrderByCreationDateDesc(authenticationFacade.getCurrentUser().getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
+            .findByUserIdAndStatus(authenticationFacade.getCurrentUser().getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
             .orElseThrow(() -> new ResourceNotFoundException("No active cart found to checkout."));
 
         if (cartToCheckout.getItens().isEmpty()) {
-            throw new EmptyCartException("Cannot checkout an empty cart."); // <-- Usando a exceção da sua colega
+            throw new EmptyCartException("Cannot checkout an empty cart.");
         }
         
-        return stripeService.createCheckoutSession(cartToCheckout);
+        return stripeService.creatCheckoutSesion(cartToCheckout);
     }
+
+    // --- MÉTODO CHAMADO PELO WEBHOOK ---
 
     @Transactional
     public void confirmPayment(Long purchaseId) {
@@ -121,12 +113,11 @@ public class PurchaseService {
             purchaseRepository.save(purchase);
             logger.info("Purchase {} successfully updated to PAID.", purchaseId);
         } else {
-         
-             throw new InvalidPurchaseStatusException("Purchase is not in AGUARDANDO_PAGAMENTO state. Cannot confirm payment.");
+             throw new InvalidPurchaseStatusException("Purchase is not in AGUARDANDO_PAGAMENTO state.");
         }
     }
 
-
+    // --- MÉTODOS DE APOIO / SEGURANÇA ---
     
     public boolean isOwner(Long purchaseId, Long userId) {
         return purchaseRepository.findById(purchaseId)

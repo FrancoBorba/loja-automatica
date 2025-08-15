@@ -36,7 +36,7 @@ public class PurchaseController implements PurchaseControllerDocs {
 
       Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection,"creationDate"));
 
-        return ResponseEntity.ok(purchaseService.findPurchasesByCurrentUser(pageable,status));
+        return ResponseEntity.ok(purchaseService.findPurchasesByCurrentUser(status,pageable));
     }
 
     @Override
