@@ -18,7 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+
 import java.util.Optional;
 
 @Service
@@ -41,8 +41,14 @@ public class PurchaseService {
 
     @Transactional(readOnly = true)
     public Page<PurchaseResponseDTO> findAll(Pageable pageable) {
+
+
         logger.info("Finding all purchases (Admin operation).");
-        return purchaseRepository.findAll(pageable).map(purchaseMapper::toResponseDTO);
+
+        Page<Purchase> purchases = purchaseRepository.findAll(pageable);
+
+        return purchases.map(purchaseMapper::toResponseDTO);
+
     }
 
     @Transactional(readOnly = true)
@@ -53,16 +59,18 @@ public class PurchaseService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase status, Pageable pageable) {
+
+    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(Pageable pageable , StatusPurchase status) {
         logger.info("Finding purchases for current user. Filter status: {}", status);
         User currentUser = authenticationFacade.getCurrentUser();
-        Page<Purchase> purchasePage;
+        Page<Purchase> purchases;
         if (status != null) {
-            purchasePage = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status, pageable);
+            purchases = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status , pageable);
         } else {
-            purchasePage = purchaseRepository.findByUserId(currentUser.getId(), pageable);
+            purchases = purchaseRepository.findByUserId(currentUser.getId() , pageable);
         }
-        return purchasePage.map(purchaseMapper::toResponseDTO);
+        return purchases.map(purchaseMapper::toResponseDTO);
+
     }
     
     @Transactional
