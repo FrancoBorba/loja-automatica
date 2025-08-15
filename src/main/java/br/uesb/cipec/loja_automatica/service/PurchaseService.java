@@ -1,317 +1,133 @@
 package br.uesb.cipec.loja_automatica.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import br.uesb.cipec.loja_automatica.DTO.ItemPurchaseRequestDTO;
-import br.uesb.cipec.loja_automatica.DTO.PurchaseRequestDTO;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
-import br.uesb.cipec.loja_automatica.exception.EmptyCartException;
-import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
-import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseStatusException;
-import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
-import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.exception.*; // Importa todas as exceções customizadas da sua colega
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
-import br.uesb.cipec.loja_automatica.model.ItemPurchase;
-import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.model.Purchase;
 import br.uesb.cipec.loja_automatica.model.User;
-import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+import br.uesb.cipec.loja_automatica.payment.StripeService;
 import br.uesb.cipec.loja_automatica.repository.PurchaseRepository;
-import br.uesb.cipec.loja_automatica.repository.UserRepository;
-import br.uesb.cipec.loja_automatica.security.UserDetailsImpl;
+import com.stripe.exception.StripeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PurchaseService {
 
-  @Autowired
-  ProductRepository productRepository;
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+    @Autowired
+    private PurchaseMapper purchaseMapper;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private StockService stockService;
+    @Autowired
+    private StripeService stripeService;
 
-  @Autowired
-   PurchaseRepository purchaseRepository;
+    private final Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());
 
-   @Autowired
-   UserRepository userRepository;
+    // --- MÉTODOS PARA O HISTÓRICO DE COMPRAS (PurchaseController) ---
 
-   @Autowired
-   PurchaseMapper purchaseMapper;
-
-   @Autowired
-   AuthenticationFacade authenticationFacade;
-
-   @Autowired
-   StockService stockService;
-
-       // For adding loggers in he applicaiton
-    // We will use the logs at the info level here
-    private Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());
-
-    public List<PurchaseResponseDTO> findAll(){
-      logger.info("Find all Purchase");
-
-      var entity = purchaseRepository.findAll();
-      List<PurchaseResponseDTO> responseDTOs = new ArrayList<>();
-
-      for(Purchase response : entity){
-        responseDTOs.add(purchaseMapper.toResponseDTO(response));
-      }
-      return responseDTOs;
+    @Transactional(readOnly = true)
+    public Page<PurchaseResponseDTO> findAll(Pageable pageable) {
+        logger.info("Finding all purchases (Admin operation).");
+        return purchaseRepository.findAll(pageable).map(purchaseMapper::toResponseDTO);
     }
 
+    @Transactional(readOnly = true)
     public PurchaseResponseDTO findById(Long id) {
-        Purchase purchase = purchaseRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Purchase with ID " + id + " not found"));
-
-      logger.info("Find a purchase by ID");
-
-      var responseDTO = purchaseMapper.toResponseDTO(purchase);
-      return responseDTO;
+        logger.info("Finding purchase by ID: {}", id);
+        Purchase purchase = findPurchaseById(id);
+        return purchaseMapper.toResponseDTO(purchase);
     }
 
-  /*
-Starting to develop based on the user flow, I changed from create to updateActiveCart since in real applications there is no more than one cart.
-
-   */
-    public PurchaseResponseDTO updateActivePurchase(PurchaseRequestDTO requestDTO) {
-        logger.info("Creating or updating a purchase (active cart).");
-
-        //   Find the currently logged-in user 
+    @Transactional(readOnly = true)
+    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase status, Pageable pageable) {
+        logger.info("Finding purchases for current user. Filter status: {}", status);
         User currentUser = authenticationFacade.getCurrentUser();
-
-        //  Find an existing active cart or create a new one
-        Purchase purchase;
-        Optional<Purchase> existingCart = purchaseRepository
-            .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
-            .stream().findFirst();
-
-        if (existingCart.isPresent()) {
-            // If an active cart already exists, use it.
-            purchase = existingCart.get();
-            logger.info("Found an existing active cart with ID: " + purchase.getId());
+        Page<Purchase> purchasePage;
+        if (status != null) {
+            purchasePage = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status, pageable);
         } else {
-            // If no active cart exists, create a new one.
-            purchase = new Purchase();
-            purchase.setUser(currentUser);
-            purchase.setStatus(StatusPurchase.AGUARDANDO_PAGAMENTO);
-            purchase.setCreationDate(LocalDateTime.now());
-            logger.info("No active cart found. Creating a new one for user ID: " + currentUser.getId());
+            purchasePage = purchaseRepository.findByUserId(currentUser.getId(), pageable);
         }
-
-        //  Update the purchase details based on the request 
-        purchase.setPayment(requestDTO.getPayment());
-
-        // This logic replaces all items in the cart with the new ones from the request.
-        List<ItemPurchase> itens = new ArrayList<>();
-        BigDecimal totalValue = BigDecimal.ZERO;
-
-        if (requestDTO.getItens() == null || requestDTO.getItens().isEmpty()) {
-            throw new EmptyCartException("A purchase must have at least one item.");
-        }
-
-        // Process the items from the request
-        for (ItemPurchaseRequestDTO itemRequest : requestDTO.getItens()) {
-            Product product = productRepository.findById(itemRequest.getProductID())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + itemRequest.getProductID() + " not found"));
-
-            if (itemRequest.getQuantity() <= 0) {
-                throw new InvalidPurchaseQuantityException(
-                    "Purchase quantity for product with id " + product.getId() + " must be greater than zero."
-                );
-            }
-
-            ItemPurchase item = new ItemPurchase();
-            item.setProduct(product);
-            item.setQuantity(itemRequest.getQuantity());
-            
-            BigDecimal subTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-            item.setSubvalor(subTotal);
-            item.setPurchase(purchase); // Link the item to the purchase
-
-            totalValue = totalValue.add(subTotal);
-            itens.add(item);
-        }
-        
-        // Clear old items and set the new ones
-        // Note: For a true "add to cart" feature, you would add to the existing list instead of clearing.
-        purchase.getItens().clear(); 
-        purchase.getItens().addAll(itens);
-        purchase.setValue(totalValue);
-
-        //  Handle stock and save 
-        updateStock(requestDTO.getItens());
-        Purchase savedPurchase = purchaseRepository.save(purchase);
-        
-        return purchaseMapper.toResponseDTO(savedPurchase);
+        return purchasePage.map(purchaseMapper::toResponseDTO);
     }
-
-
-    public PurchaseResponseDTO updatePurchase(Long id ,PurchaseRequestDTO requestDTO){
-        logger.info("Update a purchase");
+    
+    @Transactional
+    public void delete(Long id) {
+        logger.info("Deleting purchase with ID: {}", id);
         User currentUser = authenticationFacade.getCurrentUser();
-
-        Purchase existingPurchase = purchaseRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Purchase with ID " + id + " not found"));
-
-        if (!existingPurchase.getUser().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("User is not authorized to update this purchase.");
-        }
-
-        // Check if the purchase has already been paid
-        if (existingPurchase.getStatus() == StatusPurchase.PAGO) {
-            throw new InvalidPurchaseStatusException("Cannot update a purchase that has already been paid.");
-        }
-
-        existingPurchase.setPayment(requestDTO.getPayment());
-
-        //Clean the old itens
-        existingPurchase.getItens().clear();
-        BigDecimal totalValue = BigDecimal.ZERO;
-
-        if (requestDTO.getItens() == null || requestDTO.getItens().isEmpty()) {
-            throw new EmptyCartException("A purchase must have at least one item.");
-        }
-
-        for (ItemPurchaseRequestDTO itemRequest : requestDTO.getItens()) {
-            Product product = productRepository.findById(itemRequest.getProductID())
-                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + itemRequest.getProductID() + " not found"));
-
-            if (itemRequest.getQuantity() <= 0) {
-                throw new InvalidPurchaseQuantityException(
-                    "Purchase quantity for product with id " + product.getId() + " must be greater than zero."
-                );
-            }
-            
-            ItemPurchase item = new ItemPurchase();
-            item.setProduct(product);
-            item.setQuantity(itemRequest.getQuantity());
-
-            BigDecimal subTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-            item.setSubvalor(subTotal);
-            item.setPurchase(existingPurchase);
-
-            totalValue = totalValue.add(subTotal);
-            existingPurchase.getItens().add(item);
-        }
-
-        existingPurchase.setValue(totalValue);
-  
-        updateStock(requestDTO.getItens());
-        Purchase updatedPurchase = purchaseRepository.save(existingPurchase);
-        return purchaseMapper.toResponseDTO(updatedPurchase);
-    }
-
-    public void delete(Long id){
-        logger.info("Delete a purchase");
-        User currentUser = authenticationFacade.getCurrentUser();
-
-        Purchase purchase = purchaseRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Purchase with ID " + id + " not found"));
+        Purchase purchase = findPurchaseById(id);
 
         if (!purchase.getUser().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("User is not authorized to delete this purchase.");
         }
-
         purchaseRepository.delete(purchase);
-    
     }
 
+    // --- MÉTODOS PARA O CARRINHO ATIVO (Usados pelo CartController) ---
 
-    public List<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase status) {
-        logger.info("Finding purchases for the current user. Filter status: " + status);
-
-        // Search for the logged in user by token
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long currentUserId = userDetails.getUser().getId();
-
-        // Search for user purchases in the database
-
-        List<Purchase> purchases;
-        if (status != null) {
-            //Search based on filter
-            purchases = purchaseRepository.findByUserIdAndStatus(currentUserId, status);
-        } else {
-            // If you don't use any filter, it returns all purchase
-            purchases = purchaseRepository.findByUserId(currentUserId);
-        }
-
-        
-        return purchases.stream()
-                .map(purchaseMapper::toResponseDTO) // Para cada 'purchase', aplica o método de mapeamento
-                .toList(); // Coleta os resultados em uma nova lista
-    }
-
+    @Transactional(readOnly = true)
     public Optional<PurchaseResponseDTO> findActiveCartByUser() {
         logger.info("Finding active cart for the current user.");
-
-        // Pega o usuário logado de forma segura
         User currentUser = authenticationFacade.getCurrentUser();
-        if (currentUser == null) {
-            return Optional.empty();
-        }
-
-        // Procura no banco pelo carrinho com status AGUARDANDO_PAGAMENTO para este usuário
         return purchaseRepository
-            .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
-            .stream()
-            .findFirst() // Pega o primeiro que encontrar (deve ser apenas um)
-            .map(purchaseMapper::toResponseDTO); // Converte para DTO se um carrinho for encontrado
+            .findFirstByUserIdAndStatusOrderByCreationDateDesc(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
+            .map(purchaseMapper::toResponseDTO);
     }
 
-    public PurchaseResponseDTO checkout() {
-        logger.info("Checking out the active cart for the current user.");
-
-        // 1. Pega o usuário logado
-        User currentUser = authenticationFacade.getCurrentUser();
-
-        // 2. Busca o carrinho ativo (o que está AGUARDANDO_PAGAMENTO)
+    @Transactional
+    public String checkout() throws StripeException {
+        logger.info("Initiating checkout for the active cart.");
         Purchase cartToCheckout = purchaseRepository
-            .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
-            .stream().findFirst()
+            .findFirstByUserIdAndStatusOrderByCreationDateDesc(authenticationFacade.getCurrentUser().getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
             .orElseThrow(() -> new ResourceNotFoundException("No active cart found to checkout."));
 
-        // 3. Validações de negócio
         if (cartToCheckout.getItens().isEmpty()) {
-            throw new EmptyCartException("Cannot checkout an empty cart.");
+            throw new EmptyCartException("Cannot checkout an empty cart."); // <-- Usando a exceção da sua colega
         }
         
-        stockService.debitStock(cartToCheckout.getItens());
-        // TODO: No futuro, a lógica de pagamento entraria aqui.
-
-        // 4. Muda o status e salva
-        cartToCheckout.setStatus(StatusPurchase.PAGO);
-        Purchase savedPurchase = purchaseRepository.save(cartToCheckout);
-
-        return purchaseMapper.toResponseDTO(savedPurchase);
+        return stripeService.createCheckoutSession(cartToCheckout);
     }
 
+    @Transactional
+    public void confirmPayment(Long purchaseId) {
+        logger.info("Confirming payment for purchase ID: {}", purchaseId);
+        Purchase purchase = findPurchaseById(purchaseId);
 
-
-    private void updateStock(List<ItemPurchaseRequestDTO> items) {
-        for (ItemPurchaseRequestDTO item : items) {
-            Product product = productRepository.findById(item.getProductID())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductID()));
-
-            if (product.getAmount() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for the product:" + product.getName());
-            }
-
-            product.setAmount(product.getAmount() - item.getQuantity());
-            productRepository.save(product);
+        if (purchase.getStatus() == StatusPurchase.AGUARDANDO_PAGAMENTO) {
+            stockService.debitStock(purchase.getItens());
+            purchase.setStatus(StatusPurchase.PAGO);
+            purchaseRepository.save(purchase);
+            logger.info("Purchase {} successfully updated to PAID.", purchaseId);
+        } else {
+         
+             throw new InvalidPurchaseStatusException("Purchase is not in AGUARDANDO_PAGAMENTO state. Cannot confirm payment.");
         }
     }
 
+
+    
+    public boolean isOwner(Long purchaseId, Long userId) {
+        return purchaseRepository.findById(purchaseId)
+                .map(purchase -> purchase.getUser().getId().equals(userId))
+                .orElse(false);
+    }
+
+    private Purchase findPurchaseById(Long id) {
+        return purchaseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Purchase not found with ID: " + id));
+    }
 }

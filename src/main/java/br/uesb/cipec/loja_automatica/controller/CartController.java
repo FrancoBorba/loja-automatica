@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.stripe.exception.StripeException;
+
 
 
 @RestController
@@ -45,8 +47,13 @@ public class CartController {
     }
 
     @PostMapping("/checkout")
-    public PurchaseResponseDTO checkout() {
-        // O ID da compra não é mais necessário na URL, pois o serviço buscará o carrinho ativo do usuário
-        return purchaseService.checkout();
+    public String checkout() {
+        try {
+            return purchaseService.checkout();
+        } catch (StripeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 }
