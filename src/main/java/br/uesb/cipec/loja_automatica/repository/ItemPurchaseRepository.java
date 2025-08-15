@@ -6,5 +6,5 @@ import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 
 
 public interface ItemPurchaseRepository extends JpaRepository<ItemPurchase,Long> {
-  
+    boolean existsByProductId(Long productId);
 }
