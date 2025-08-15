@@ -11,7 +11,7 @@ import br.uesb.cipec.loja_automatica.model.User;
 public interface UserRepository extends JpaRepository<User, Long>{
 
     Optional<User> findByEmail(String email);
-    
+
     boolean existsByEmailAndEnabledTrue(String email);
    
     @Query("SELECT u.enabled FROM User u WHERE u.id = :id")

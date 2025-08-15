@@ -12,6 +12,8 @@ import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.enums.TypePayment;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
 import br.uesb.cipec.loja_automatica.model.ItemPurchase;
@@ -35,6 +37,15 @@ public class ItemPurchaseService {
 
     @Transactional
     public PurchaseResponseDTO addItemToCart(ItemPurchaseRequestDTO itemRequest) {
+        // 1. Validação de objeto nulo
+        if (itemRequest == null) {
+            throw new RequiredObjectIsNullException("The item to be added to the cart cannot be null.");
+        }
+        // 2. Validação de quantidade
+        if (itemRequest.getQuantity() <= 0) {
+            throw new InvalidPurchaseQuantityException("The quantity of an item to be added must be greater than zero.");
+        }
+
         Purchase activeCart = getOrCreateActiveCartForCurrentUser();
 
         Optional<ItemPurchase> existingItemOpt = activeCart.getItens().stream()

@@ -19,6 +19,8 @@ import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.UserRole;
+import br.uesb.cipec.loja_automatica.exception.BadCredentialsException;
+import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
@@ -52,7 +54,7 @@ public class UserService {
             throw new RequiredObjectIsNullException("User cannot be null.");
         }
         if (repository.findByEmail(user.getEmail()).isPresent()){
-            throw new IllegalArgumentException("Email already registered");
+           throw new EmailAlreadyInUseException("Email already in use.");
         }
 
         var entity = mapper.toEntity(user);
@@ -112,13 +114,17 @@ public class UserService {
     }
 
     public UserResponseDTO update(UserUpdateDTO user){
-      
+
+        if (user == null) {
+            throw new RequiredObjectIsNullException("It is not allowed to persist a null object!");
+        }
+
         User entity = authenticationFacade.getCurrentUser();
   
         if(user.getEmail() != null){
             Optional<User> userWithSameEmail = repository.findByEmail(user.getEmail());
             if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("Email address already in use by another user.");
+                throw new EmailAlreadyInUseException("Email already in use.");
             }
             entity.setEmail(user.getEmail()); 
         }
@@ -142,20 +148,20 @@ public class UserService {
                 .orElseThrow(() -> new  ResourceNotFoundException("User not found"));
     }
     
-   public void deleteMyAccount() {
-    // Take the logged user
-    User currentUser = authenticationFacade.getCurrentUser();
+    public void deleteMyAccount() {
+        // Take the logged user
+        User currentUser = authenticationFacade.getCurrentUser();
 
-    // Instead of deleting the tuple we deactivate it
-    currentUser.setActive(false); ;
-    repository.save(currentUser);
-}
+        // Instead of deleting the tuple we deactivate it
+        currentUser.setActive(false); ;
+        repository.save(currentUser);
+    }
 
 
     public String authenticate(UserLoginDTO loginRequest) {
     
         if(!repository.existsByEmailAndEnabledTrue(loginRequest.getEmail())){
-            throw new IllegalStateException("Credentials not validated");
+            throw new BadCredentialsException("Bad credentials.");
         }
 
         var usernamePassword = new UsernamePasswordAuthenticationToken(
@@ -174,18 +180,18 @@ public class UserService {
 
 
     public UserResponseDTO getMyProfile() {
-    // Usa a facade para pegar o usuário logado de forma segura
-    User currentUser = authenticationFacade.getCurrentUser();
-    
-    // Mapeia a entidade para um DTO de resposta seguro (sem a senha)
-    return mapper.toResponseDTO(currentUser);
-}
+        // Usa a facade para pegar o usuário logado de forma segura
+        User currentUser = authenticationFacade.getCurrentUser();
+        
+        // Mapeia a entidade para um DTO de resposta seguro (sem a senha)
+        return mapper.toResponseDTO(currentUser);
+    }
 
     public void enableUser(Long userID){
-        var user = repository.findById(userID);
-        User entity = user.get();
-        entity.setEnabled(true);
-        repository.save(entity);
+        var user = repository.findById(userID)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userID));
+        user.setEnabled(true);
+        repository.save(user);
     }
 
 }

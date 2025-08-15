@@ -8,10 +8,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
+
+import br.uesb.cipec.loja_automatica.controller.ControllerProduct;
+import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
+
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
 import br.uesb.cipec.loja_automatica.model.Product;
+import br.uesb.cipec.loja_automatica.repository.ItemPurchaseRepository;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
 
 
@@ -24,6 +29,9 @@ public class ProductService {
 
     @Autowired
     ProductMapper mapper;
+
+    @Autowired
+    ItemPurchaseRepository itemPurchaseRepository; 
 
     // For adding loggers in he applicaiton
     // We will use the logs at the info level here
@@ -49,6 +57,16 @@ public class ProductService {
          throw new RequiredObjectIsNullException("Product cannot be null.");
       }
 
+      if (product.getName() == null || product.getName().isBlank()) {
+        throw new InvalidProductDataException("Product name cannot be null or empty.");
+      }
+      if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+          throw new InvalidProductDataException("Product price cannot be negative.");
+      }
+      if (product.getAmount() == null || product.getAmount() < 0) {
+          throw new InvalidProductDataException("Product stock amount cannot be negative.");
+      }
+      
       logger.info("Create a product");
       var entity = mapper.toEntity(product);
 
@@ -100,7 +118,9 @@ public class ProductService {
 
       Product entity = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product not found"));
       logger.info("Delete  the product from Id " + id );
-
+      if (itemPurchaseRepository.existsByProductId(id)) {
+        throw new ProductInUseException("Cannot delete a product that is part of one or more existing purchases.");
+      }
       // Delete the product with this id
      repository.delete(entity);
     }

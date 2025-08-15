@@ -8,9 +8,8 @@ import org.springframework.stereotype.Service;
 
 import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserDTO;
-import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.exception.UserAlreadyVerifiedException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
-import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.repository.UserRepository;
 
 @Service
@@ -33,6 +32,11 @@ public class UserConfirmationService {
 
     public void sendConfirmationToken(String email){
         UserDTO userDTO = userService.findByEmail(email);
+
+        if (userService.isUserEnabled(userDTO.getId())) {
+            throw new UserAlreadyVerifiedException("This user account is already verified and active.");
+        }
+
          //create a token 
          TokenDTO token = new TokenDTO(
             UUID.randomUUID().toString(),
@@ -51,9 +55,9 @@ public class UserConfirmationService {
         TokenDTO tokenDTO = tokenService.findByToken(token);
         UserDTO userDTO = userService.findById(tokenDTO.getUserID());
 
-        //check if the user is already verified
+        //check if the user is already enable
         if(userService.isUserEnabled(userDTO.getId())){
-            throw new IllegalStateException("User already verified.");
+            throw new UserAlreadyVerifiedException("This user account is already verified and active.");
         }
 
         //confirm the token
