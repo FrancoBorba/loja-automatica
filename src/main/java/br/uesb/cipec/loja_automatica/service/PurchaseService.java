@@ -5,7 +5,6 @@ import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
-import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 import br.uesb.cipec.loja_automatica.model.Purchase;
 import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.payment.StripeService;
@@ -14,12 +13,11 @@ import com.stripe.exception.StripeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,11 +43,13 @@ public class PurchaseService {
     // --- MÉTODOS PARA O HISTÓRICO DE COMPRAS (PurchaseController) ---
 
     @Transactional(readOnly = true)
-    public List<PurchaseResponseDTO> findAll() {
+    public Page<PurchaseResponseDTO> findAll(Pageable pageable) {
+
         logger.info("Finding all purchases (Admin operation).");
-        return purchaseRepository.findAll().stream()
-                .map(purchaseMapper::toResponseDTO)
-                .toList();
+
+        Page<Purchase> purchases = purchaseRepository.findAll(pageable);
+
+        return purchases.map(purchaseMapper::toResponseDTO);
     }
 
     @Transactional(readOnly = true)
@@ -61,18 +61,16 @@ public class PurchaseService {
     }
 
     @Transactional(readOnly = true)
-    public List<PurchaseResponseDTO> findPurchasesByCurrentUser(StatusPurchase status) {
+    public Page<PurchaseResponseDTO> findPurchasesByCurrentUser(Pageable pageable , StatusPurchase status) {
         logger.info("Finding purchases for current user. Filter status: {}", status);
         User currentUser = authenticationFacade.getCurrentUser();
-        List<Purchase> purchases;
+        Page<Purchase> purchases;
         if (status != null) {
-            purchases = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status);
+            purchases = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status , pageable);
         } else {
-            purchases = purchaseRepository.findByUserId(currentUser.getId());
+            purchases = purchaseRepository.findByUserId(currentUser.getId() , pageable);
         }
-        return purchases.stream()
-                .map(purchaseMapper::toResponseDTO)
-                .toList();
+        return purchases.map(purchaseMapper::toResponseDTO);
     }
     
     @Transactional

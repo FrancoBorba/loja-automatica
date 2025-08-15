@@ -10,11 +10,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
+
 
 @Tag(name = "Purchase History", description = "Endpoints for viewing and managing historical purchases")
 @SecurityRequirement(name = "bearerAuth")
@@ -27,7 +29,12 @@ public interface PurchaseControllerDocs {
         @ApiResponse(responseCode = "401", description = "Unauthorized - User must be logged in", content = @Content),
         @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
     })
-    List<PurchaseResponseDTO> findMyPurchases(@RequestParam(required = false) StatusPurchase status);
+    ResponseEntity<Page<PurchaseResponseDTO>> findMyPurchases(
+      @RequestParam(required = false) StatusPurchase status,
+      @RequestParam(value = "page" , defaultValue = "0") Integer page,
+      @RequestParam(value = "size" , defaultValue = "10") Integer size,
+      @RequestParam(value = "direction" , defaultValue = "asc") String direction
+      );
 
     @Operation(summary = "Find all purchases (Admin only)")
     @ApiResponses(value = {
@@ -37,7 +44,11 @@ public interface PurchaseControllerDocs {
         @ApiResponse(responseCode = "403", description = "Forbidden - User must be an Admin", content = @Content),
         @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content)
     })
-    List<PurchaseResponseDTO> findAll();
+    ResponseEntity<Page<PurchaseResponseDTO>> findAll(
+      @RequestParam(value = "page" , defaultValue = "0") Integer page,
+      @RequestParam(value = "size" , defaultValue = "10") Integer size,
+      @RequestParam(value = "direction" , defaultValue = "asc") String direction
+    );
 
     @Operation(summary = "Find a specific purchase by ID (Admin or Owner)")
     @ApiResponses(value = {
