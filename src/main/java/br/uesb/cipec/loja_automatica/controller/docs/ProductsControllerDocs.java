@@ -1,12 +1,14 @@
 package br.uesb.cipec.loja_automatica.controller.docs;
 
-import java.util.List;
-
 
 
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -65,7 +67,11 @@ public interface ProductsControllerDocs {
       @ApiResponse(description = "Internal server error" , responseCode = "500", content = @Content)
     }
   )
-  public List<ProductDTO> findAll();
+  public ResponseEntity<Page<ProductDTO>> findAll(
+    @RequestParam(value = "page" , defaultValue = "0") Integer page,
+    @RequestParam(value = "size" , defaultValue = "10") Integer size,
+    @RequestParam(value = "direction" , defaultValue = "asc") String direction
+  );
 
   @Operation(
     summary = "Find by id" ,

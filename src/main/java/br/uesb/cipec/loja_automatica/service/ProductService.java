@@ -1,21 +1,19 @@
 package br.uesb.cipec.loja_automatica.service;
 
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
-import br.uesb.cipec.loja_automatica.controller.ControllerProduct;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 
 
 @Service // This annotation says that the class will contain the busines rules
@@ -40,7 +38,7 @@ public class ProductService {
                      .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     
     var dto = mapper.toDTO(entity);
-    addHatoasLinks(dto);
+
 
     return dto;
   }
@@ -58,24 +56,19 @@ public class ProductService {
 
       var dto = mapper.toDTO(entity);
 
-      addHatoasLinks(dto);
       return dto;
 
     }
 
     // Return all Products
-   public List<ProductDTO> findAll() {
+   public Page<ProductDTO> findAll(Pageable pageable) {
+    
     logger.info("Find all products");
-    var entities = repository.findAll();
-    var products = entities.stream()
-                   .map(mapper::toDTO)
-                   .toList();
 
-    for (ProductDTO productDTO : products){
-          addHatoasLinks(productDTO);
-    }
+    Page<Product> productPage = repository.findAll(pageable);
 
-    return products;
+  
+    return productPage.map(mapper::toDTO);
 }
 
     // Currently, to update it is necessary to pass the json of the Product with 
@@ -98,7 +91,7 @@ public class ProductService {
       repository.save(entity);
 
       var dto = mapper.toDTO(entity);
-      addHatoasLinks(dto);
+     
       return dto;
      
     }
@@ -113,19 +106,7 @@ public class ProductService {
     }
 
     
- public  void addHatoasLinks( ProductDTO dto) {
-    dto.add(linkTo(methodOn(ControllerProduct.class).findByID(dto.getId())).withSelfRel().withType("GET"));
 
-    dto.add(linkTo(methodOn(ControllerProduct.class).findAll()).withRel("findAll").withType("GET"));
-
-    dto.add(linkTo(methodOn(ControllerProduct.class).create(dto)).withRel("create").withType("POST"));
-
-    dto.add(linkTo(methodOn(ControllerProduct.class).update(dto)).withRel("update").withType("PUT"));
-
-    dto.add(linkTo(methodOn(ControllerProduct.class).delete(dto.getId())).withRel("delete").withType("DELETE"));
-
-    
-  }
 
     
 
