@@ -16,9 +16,14 @@ spring:
     enabled: true
     locations: classpath:db/migration
     baseline-on-migrate: true
+  elasticsearch:
+    uris: http://localhost:9200
+   # username: elastic
+   # password: SUA_SENHA_GERADA_PELO_ELASTICSEARCH_AQUI
 logging:
   level:
     br.uesb.cipec: DEBUG
+    org.springframework.data.elasticsearch.client.elc: TRACE
 spring-doc:
   paths-to-match: /api/**
   swagger-ui:

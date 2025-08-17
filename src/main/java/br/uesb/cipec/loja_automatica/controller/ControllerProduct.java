@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
 import br.uesb.cipec.loja_automatica.controller.docs.ProductsControllerDocs;
 import br.uesb.cipec.loja_automatica.service.ProductService;
+import br.uesb.cipec.loja_automatica.service.search.ProductSearchService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
@@ -36,6 +37,9 @@ public class ControllerProduct implements ProductsControllerDocs {
     
     @Autowired
     ProductService service;
+
+    @Autowired
+    private ProductSearchService searchService;
     
     @Override
     @GetMapping(value ="/{id}" ,
@@ -59,14 +63,15 @@ public class ControllerProduct implements ProductsControllerDocs {
     public ResponseEntity<Page<ProductDTO>> findAll(
     @RequestParam(value = "page" , defaultValue = "0") Integer page,
     @RequestParam(value = "size" , defaultValue = "10") Integer size,
-    @RequestParam(value = "direction" , defaultValue = "asc") String direction
+    @RequestParam(value = "direction" , defaultValue = "asc") String direction,
+     @RequestParam(value = "name", required = false) String name
   ){ // end point GET
     
       var sortDirection = "desc".equalsIgnoreCase(direction) ? Direction.DESC : Direction.ASC;
 
       Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection,"name"));
 
-      return ResponseEntity.ok(service.findAll(pageable));
+      return ResponseEntity.ok(searchService.searchByName(name, pageable));
 
     }
 

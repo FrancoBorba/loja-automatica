@@ -5,10 +5,13 @@ import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
 import br.uesb.cipec.loja_automatica.exception.ProductInUseException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.mapper.ProductDocumentMapper;
 import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
 import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.repository.ItemPurchaseRepository;
 import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+import br.uesb.cipec.loja_automatica.service.index.ProductIndexingService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +32,12 @@ public class ProductService {
 
     @Autowired
     private ItemPurchaseRepository itemPurchaseRepository; 
+
+    @Autowired
+    private ProductIndexingService indexingService; 
+    
+    @Autowired
+    private ProductDocumentMapper documentMapper; 
 
     private final Logger logger = LoggerFactory.getLogger(ProductService.class.getName());
 
@@ -64,6 +73,7 @@ public class ProductService {
         
         logger.info("Creating one product");
         Product entity = mapper.toEntity(product);
+        indexingService.save(documentMapper.toDocument(entity));
         Product savedEntity = repository.save(entity);
         return mapper.toDTO(savedEntity);
     }
@@ -85,6 +95,7 @@ public class ProductService {
         entity.setPrice(product.getPrice());
 
         Product updatedEntity = repository.save(entity);
+        indexingService.save(documentMapper.toDocument(updatedEntity));
         return mapper.toDTO(updatedEntity);
     }
 

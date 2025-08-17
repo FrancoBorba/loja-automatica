@@ -70,7 +70,8 @@ public interface ProductsControllerDocs {
   public ResponseEntity<Page<ProductDTO>> findAll(
     @RequestParam(value = "page" , defaultValue = "0") Integer page,
     @RequestParam(value = "size" , defaultValue = "10") Integer size,
-    @RequestParam(value = "direction" , defaultValue = "asc") String direction
+    @RequestParam(value = "direction" , defaultValue = "asc") String direction,
+    @RequestParam(value = "name", required = false) String name
   );
 
   @Operation(
