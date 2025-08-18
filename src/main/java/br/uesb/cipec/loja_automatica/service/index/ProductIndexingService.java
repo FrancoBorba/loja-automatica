@@ -30,12 +30,12 @@ public class ProductIndexingService {
         this.mapper = mapper;
     }
 
-    // Este método lê todos os produtos do PostgreSQL e os salva no Elasticsearch
+    
     public void indexAllProductsFromDatabase() {
         logger.info("Starting to index all products from database...");
         
         List<ProductDocument> productDocuments = productRepository.findAll().stream()
-                .map(mapper::toDocument) // Converte cada Product para ProductDocument
+                .map(mapper::toDocument) 
                 .toList();
         
         elasticsearchRepository.saveAll(productDocuments);

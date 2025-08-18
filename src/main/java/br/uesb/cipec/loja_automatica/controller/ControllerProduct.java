@@ -69,7 +69,7 @@ public class ControllerProduct implements ProductsControllerDocs {
     
       var sortDirection = "desc".equalsIgnoreCase(direction) ? Direction.DESC : Direction.ASC;
 
-      Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection,"name"));
+      Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection,"name.keyword"));
 
       return ResponseEntity.ok(searchService.searchByName(name, pageable));
 

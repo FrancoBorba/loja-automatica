@@ -58,8 +58,8 @@ public interface ProductsControllerDocs {
     responses = {
          @ApiResponse(description = "Success" , responseCode = "200" ,
      content = {
-      @Content( mediaType = MediaType.APPLICATION_JSON_VALUE,
-     array = @ArraySchema(schema = @Schema(implementation = ProductDTO.class)))}),
+      @Content( mediaType = MediaType.APPLICATION_JSON_VALUE
+      )}),
       @ApiResponse(description = "No content" , responseCode = "204" , content = @Content),
       @ApiResponse(description = "Bad request" , responseCode = "400" , content = @Content),
       @ApiResponse(description = "Unatorizhed" , responseCode = "401" , content = @Content),
