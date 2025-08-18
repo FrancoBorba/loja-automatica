@@ -1,8 +1,11 @@
 package br.uesb.cipec.loja_automatica;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
+import br.uesb.cipec.loja_automatica.service.index.ProductIndexingService;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -25,4 +28,14 @@ public class LojaAutomaticaApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(LojaAutomaticaApplication.class, args);
 	}
+
+    /* 
+     @Bean
+    public CommandLineRunner initialIndexer(ProductIndexingService indexingService) {
+        return args -> {
+            System.out.println("--- Executando a indexação inicial de produtos ---");
+            indexingService.indexAllProductsFromDatabase();
+            System.out.println("--- Indexação inicial concluída ---");
+        };
+    }*/
 }
