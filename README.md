@@ -1,22 +1,99 @@
-# 🛒 Loja Automática - UESB
+# Loja Automática API (UESB)
 
-Este projeto implementa uma **Loja Automática** para a feirinha da UESB, permitindo que os alunos escaneiem QR Codes nos produtos, façam a compra online e retirem no CIPEC com recibo, utilizando **Java + Spring Boot**.
+[![Java](https://img.shields.io/badge/Java-21-blue.svg)](https://www.java.com) [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https://spring.io/projects/spring-boot) [![Docker](https://img.shields.io/badge/Docker-gray.svg?logo=docker)](https://www.docker.com/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-gray.svg?logo=postgresql)](https://www.postgresql.org/) [![Elasticsearch](https://img.shields.io/badge/Elasticsearch-gray.svg?logo=elasticsearch)](https://www.elastic.co/)
 
-## 🚀 Funcionalidades
+API RESTful para um sistema de e-commerce, desenvolvida como parte do projeto da Loja Automática do Pet Computação na UESB. O projeto foi construído com foco em uma arquitetura moderna, robusta e escalável, utilizando as melhores práticas do ecossistema Spring.
 
-✅ Cadastro e listagem de produtos  
-✅ Controle de estoque (quantidade disponível)  
-✅ Registro de compras com dados do comprador  
-✅ Geração de recibo de compra (em tela, PDF futuramente)  
-✅ Retirada no CIPEC com conferência via sistema  
-✅ Geração de QR Code para cada produto (etapa futura)
+## Status do Projeto
 
-## ⚙️ Tecnologias Utilizadas
+**Núcleo de Funcionalidades do Backend: Concluído ✅**
+(Próximos passos incluem a implementação de testes automatizados e a orquestração do ambiente com Docker Compose).
 
-- Java 21+
-- Spring Boot 3+
-- Spring Data JPA
-- H2 Database (desenvolvimento, migrar para PostgreSQL futuramente)
-- Thymeleaf (opcional, para páginas web)
-- Lombok (redução de boilerplate)
-- Git e GitHub para versionamento
+---
+
+## Funcionalidades Implementadas
+
+O backend cobre todo o fluxo de negócio essencial de um e-commerce:
+
+* ✅ **Autenticação & Autorização:** Sistema completo com JWT e perfis de acesso (`USER` / `ADMIN`), utilizando Spring Security.
+* ✅ **Gerenciamento de Usuários:** Cadastro, login, e endpoints seguros para que o usuário gerencie seu próprio perfil.
+* ✅ **Catálogo de Produtos:** CRUD completo de produtos, com endpoints de criação/edição/deleção protegidos para administradores.
+* ✅ **Busca Otimizada:** Endpoint de busca de produtos paginado e com filtros de texto, utilizando **Elasticsearch** para alta performance.
+* ✅ **Fluxo de Carrinho de Compras:** Sistema completo para gerenciamento de carrinho de compras ativo, com endpoints para adicionar, remover e atualizar a quantidade de itens.
+* ✅ **Checkout e Pagamento:** Integração com o gateway de pagamento **Stripe** para iniciar o processo de pagamento.
+* ✅ **Confirmação Automática de Pedidos:** Endpoint de **Webhook** para receber notificações do Stripe, confirmar o pagamento, atualizar o status do pedido e dar baixa no estoque.
+* ✅ **Gestão de Estoque:** Lógica transacional e segura para garantir a consistência do inventário.
+* ✅ **Histórico de Compras:** Endpoint paginado para que o usuário possa consultar suas compras finalizadas.
+* ✅ **Documentação de API:** Documentação completa e interativa com Swagger/OpenAPI.
+
+---
+
+## Tecnologias Utilizadas
+
+* **Backend:** Java 21, Spring Boot 3, Spring Security, Spring Data JPA, Spring Data Elasticsearch
+* **Banco de Dados Primário:** PostgreSQL
+* **Motor de Busca:** Elasticsearch
+* **Pagamentos:** Stripe API
+* **Ambiente e DevOps:** Docker, Docker Compose
+* **Migrações de Banco:** Flyway
+* **Mapeamento de Objetos:** MapStruct
+* **Testes (em desenvolvimento):** JUnit 5, Mockito
+
+---
+
+## Como Rodar o Projeto (Ambiente de Desenvolvimento)
+
+#### 1. Pré-requisitos
+* Git
+* Java JDK 21+
+* Maven 3.8+
+* Docker e Docker Compose
+
+#### 2. Clonar o Repositório
+```bash
+git clone [https://github.com/FrancoBorba/loja-automatica.git](https://github.com/FrancoBorba/loja-automatica.git)
+cd loja-automatica
+```
+
+#### 3. Configuração de Ambiente (Variáveis Secretas)
+As chaves de API e senhas não ficam no repositório. Crie um arquivo na pasta `src/main/resources/` com o nome `application-local.yml` e preencha com seus dados.
+
+**Arquivo: `src/main/resources/application-local.yml`**
+```yaml
+# Configurações locais e secretas - ESTE ARQUIVO É IGNORADO PELO GIT
+spring:
+  # --- Configurações do Banco de Dados Local ---
+  datasource:
+    password: SUA_SENHA_DO_BANCO_POSTGRES_AQUI
+
+  # --- Configurações do E-mail (Gmail App Password) ---
+  mail:
+    password: SUA_SENHA_DE_APP_DO_GMAIL_AQUI
+
+# --- Chaves da API do Stripe (Modo de Teste) ---
+stripe:
+  secret-key: "sk_test_COLE_SUA_CHAVE_SECRETA_AQUI"
+  webhook-secret: "whsec_COLE_SEU_SEGREDO_DO_WEBHOOK_AQUI"
+```
+
+#### 4. Iniciar os Serviços com Docker Compose
+Este comando irá iniciar os containers do PostgreSQL e do Elasticsearch.
+```bash
+docker-compose up -d
+```
+*(Aguarde um ou dois minutos para que os serviços iniciem completamente).*
+
+#### 5. Executar a Aplicação Spring Boot
+Você pode executar pela sua IDE ou pelo terminal com o Maven:
+```bash
+mvn spring-boot:run
+```
+A aplicação estará rodando em `http://localhost:8080`.
+
+---
+
+## Documentação da API (Swagger)
+Com a aplicação rodando, a documentação interativa da API está disponível em:
+* [**http://localhost:8080/swagger-ui.html**](http://localhost:8080/swagger-ui.html)
+
+Você pode usar o Swagger para testar todos os endpoints. Lembre-se de usar o fluxo de `/api/auth/register` e `/api/auth/login` para obter um token JWT e autorizar suas requisições no botão "Authorize".
