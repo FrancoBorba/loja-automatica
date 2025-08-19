@@ -56,25 +56,13 @@ cd loja-automatica
 ```
 
 #### 3. Configuração de Ambiente (Variáveis Secretas)
-As chaves de API e senhas não ficam no repositório. Crie um arquivo na pasta `src/main/resources/` com o nome `application-local.yml` e preencha com seus dados.
+Este projeto usa um arquivo de configuração local para armazenar senhas e chaves de API, garantindo que nenhum segredo seja enviado para o repositório Git.
 
-**Arquivo: `src/main/resources/application-local.yml`**
-```yaml
-# Configurações locais e secretas - ESTE ARQUIVO É IGNORADO PELO GIT
-spring:
-  # --- Configurações do Banco de Dados Local ---
-  datasource:
-    password: SUA_SENHA_DO_BANCO_POSTGRES_AQUI
+1.  **Crie seu arquivo de configuração local:**
+    Na pasta `src/main/resources/`, crie uma cópia do arquivo de exemplo `application-local.yml.example`. Você pode renomear a cópia para `application-local.yml`.
 
-  # --- Configurações do E-mail (Gmail App Password) ---
-  mail:
-    password: SUA_SENHA_DE_APP_DO_GMAIL_AQUI
-
-# --- Chaves da API do Stripe (Modo de Teste) ---
-stripe:
-  secret-key: "sk_test_COLE_SUA_CHAVE_SECRETA_AQUI"
-  webhook-secret: "whsec_COLE_SEU_SEGREDO_DO_WEBHOOK_AQUI"
-```
+2.  **Preencha seus segredos:**
+    Abra o novo arquivo `application-local.yml` e preencha os valores com suas próprias credenciais (senha do banco, chaves do Stripe, etc.). O arquivo `application.yml` principal já está configurado para carregar este arquivo automaticamente.
 
 #### 4. Iniciar os Serviços com Docker Compose
 Este comando irá iniciar os containers do PostgreSQL e do Elasticsearch.

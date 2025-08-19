@@ -1,0 +1,22 @@
+# ===================================================================
+# TEMPLATE PARA CONFIGURAÇÕES LOCAIS E SECRETAS
+# Copie este arquivo para 'application-local.yml' e preencha os valores.
+# O arquivo 'application-local.yml' é ignorado pelo Git.
+# ===================================================================
+
+spring:
+  # --- SENHA DO BANCO DE DADOS LOCAL ---
+  datasource:
+    password: SUA_SENHA_DO_POSTGRES_AQUI
+
+  # --- SENHA DO E-MAIL (Gmail App Password) ---
+  mail:
+    password: SUA_SENHA_DE_APP_DO_GMAIL_AQUI
+
+# --- CHAVES DA API DO STRIPE (Modo de Teste) ---
+stripe:
+  # Chave secreta obtida no painel do Stripe (começa com sk_test_)
+  secret-key: "sk_test_COLE_SUA_CHAVE_SECRETA_AQUI"
+  
+  # Segredo da assinatura do Webhook (começa com whsec_)
+  webhook-secret: "whsec_COLE_SEU_SEGREDO_DO_WEBHOOK_AQUI"
