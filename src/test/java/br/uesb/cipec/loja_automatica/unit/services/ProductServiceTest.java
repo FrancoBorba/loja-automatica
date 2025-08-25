@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,19 +16,22 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
 import br.uesb.cipec.loja_automatica.document.ProductDocument;
+import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
+import br.uesb.cipec.loja_automatica.exception.ProductInUseException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.ProductDocumentMapper;
 import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
@@ -280,7 +284,7 @@ public class ProductServiceTest {
       String expectedMessage = "Product not found with id: " + 2;
       String actualMessage = exception.getMessage();
 
-      assertTrue(expectedMessage.contains(actualMessage));
+       assertTrue(actualMessage.contains(expectedMessage));
 
   
     }
@@ -288,59 +292,323 @@ public class ProductServiceTest {
     // --- CREATE Method Exceptions ---
 
     @Test
-     @Disabled
     @DisplayName("Should throw RequiredObjectIsNullException when creating a null product")
     void testCreate_WithNullProduct_ShouldThrowRequiredObjectIsNullException() {
 
-  
+        //when(repository.save(any(Product.class))).thenReturn(entityToSave);
+
+        // Act|Assert ; Then|When
+        Exception exception = assertThrows(RequiredObjectIsNullException.class ,
+        ()-> {
+            mockService.create(null);
+        });
+
+      String expectedMessage = "Product data cannot be null.";
+      String actualMessage = exception.getMessage();
+
+       assertTrue(actualMessage.contains(expectedMessage));
+       assertEquals(expectedMessage,actualMessage);
     }
 
     @Test
-     @Disabled
     @DisplayName("Should throw InvalidProductDataException when creating with a blank name")
     void testCreate_WithBlankName_ShouldThrowInvalidProductDataException() {
+
+       productDTO.setName("");
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()-> {
+            mockService.create(productDTO);
+        });
+
+
+      String expectedMessage = "Product name cannot be null or empty.";
+      String actualMessage = exception.getMessage();
+
+    assertTrue(actualMessage.contains(expectedMessage));
+    assertEquals(expectedMessage,actualMessage);
     }
 
     @Test
-     @Disabled
+    @DisplayName("Should throw InvalidProductDataException when creating with a null name")
+    void testCreate_WithNullName_ShouldThrowInvalidProductDataException() {
+
+       productDTO.setName(null);
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()-> {
+            mockService.create(productDTO);
+        });
+
+
+      String expectedMessage = "Product name cannot be null or empty.";
+      String actualMessage = exception.getMessage();
+
+    assertTrue(actualMessage.contains(expectedMessage));
+    assertEquals(expectedMessage,actualMessage);
+    }
+
+    @Test
     @DisplayName("Should throw InvalidProductDataException when creating with a negative price")
     void testCreate_WithNegativePrice_ShouldThrowInvalidProductDataException() {
+
+      productDTO.setPrice(new BigDecimal("-10.00")); 
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.create(productDTO);
+        });
+
+             String expectedMessage = "Product price cannot be negative.";
+        String actualMessage = exception.getMessage();
+
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+     @Test
+    @DisplayName("Should throw InvalidProductDataException when creating with a null price")
+    void testCreate_WithNullPrice_ShouldThrowInvalidProductDataException() {
+
+      productDTO.setPrice(null); 
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.create(productDTO);
+        });
+
+             String expectedMessage = "Product price cannot be negative.";
+        String actualMessage = exception.getMessage();
+
+        assertEquals(expectedMessage, actualMessage);
     }
     
     @Test
-     @Disabled
     @DisplayName("Should throw InvalidProductDataException when creating with a negative amount")
     void testCreate_WithNegativeAmount_ShouldThrowInvalidProductDataException() {
-        // NOVO: Faltava o teste para a quantidade.
+        
+        productDTO.setAmount(-10);
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()-> {
+            mockService.create(productDTO);
+        });
+
+
+      String expectedMessage = "Product stock amount cannot be negative.";
+      String actualMessage = exception.getMessage();
+
+       assertTrue(actualMessage.contains(expectedMessage));
+       assertEquals(expectedMessage,actualMessage);
+    }
+
+     @Test
+    @DisplayName("Should throw InvalidProductDataException when creating with a null amount")
+    void testCreate_WithNullAmount_ShouldThrowInvalidProductDataException() {
+        
+        productDTO.setAmount(null);
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()-> {
+            mockService.create(productDTO);
+        });
+
+
+      String expectedMessage = "Product stock amount cannot be negative.";
+      String actualMessage = exception.getMessage();
+
+       assertTrue(actualMessage.contains(expectedMessage));
+       assertEquals(expectedMessage,actualMessage);
     }
 
     // --- UPDATE Method Exceptions ---
-    
     @Test
-     @Disabled
-    @DisplayName("Should throw ResourceNotFoundException when trying to update a non-existent product")
-    void testUpdate_WhenProductDoesNotExist_ShouldThrowResourceNotFoundException() {
+    @DisplayName("Should throw RequiredObjectIsNullException when updating with a null product")
+    void testUpdate_WithNullProduct_ShouldThrowRequiredObjectIsNullException() {
+        
+        Exception exception = assertThrows(RequiredObjectIsNullException.class, () -> {
+            mockService.update(null);
+        });
+
+        String expectedMessage = "Product data cannot be null.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
     }
     
     @Test
-     @Disabled
+    @DisplayName("Should throw ResourceNotFoundException when trying to update a non-existent product")
+    void testUpdate_WhenProductDoesNotExist_ShouldThrowResourceNotFoundException() {
+
+        
+      when(repository.findById(productDTO.getId())).thenReturn(Optional.empty());
+
+
+        Exception exception = assertThrows(ResourceNotFoundException.class ,
+        ()->{
+            mockService.update(productDTO);
+        });
+
+
+      String expectedMessage = "Product not found with id: " + productDTO.getId();
+      String actualMessage = exception.getMessage();
+
+       assertTrue(actualMessage.contains(expectedMessage));
+       assertEquals(expectedMessage,actualMessage);
+
+    }
+    
+    @Test
     @DisplayName("Should throw InvalidProductDataException when updating with a blank name")
     void testUpdate_WithBlankName_ShouldThrowInvalidProductDataException() {
-        // NOVO: É importante testar as validações no update também.
+     
+        productDTO.setName("");
+
+        when(repository.findById(1L)).thenReturn(Optional.of(productEntity));
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()->{
+            mockService.update(productDTO);
+        });
+
+          String expectedMessage = "Product name cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+    }
+
+      @Test
+    @DisplayName("Should throw InvalidProductDataException when updating with a null name")
+    void testUpdate_WithNullName_ShouldThrowInvalidProductDataException() {
+     
+        productDTO.setName(null);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(productEntity));
+
+        Exception exception = assertThrows(InvalidProductDataException.class ,
+        ()->{
+            mockService.update(productDTO);
+        });
+
+          String expectedMessage = "Product name cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidProductDataException when updating with a negative price")
+    void testUpdate_WithNegativePrice_ShouldThrowInvalidProductDataException() {
+        // ARRANGE
+       
+        when(repository.findById(productDTO.getId())).thenReturn(Optional.of(productEntity));
+        
+       
+        productDTO.setPrice(new BigDecimal("-1.00"));
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.update(productDTO);
+        });
+
+        String expectedMessage = "Product price cannot be negative.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+     @Test
+    @DisplayName("Should throw InvalidProductDataException when updating with a null price")
+    void testUpdate_WithNullPrice_ShouldThrowInvalidProductDataException() {
+        // ARRANGE
+       
+        when(repository.findById(productDTO.getId())).thenReturn(Optional.of(productEntity));
+        
+       
+        productDTO.setPrice(null);
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.update(productDTO);
+        });
+
+        String expectedMessage = "Product price cannot be negative.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidProductDataException when updating with a negative amount")
+    void testUpdate_WithNegativeAmount_ShouldThrowInvalidProductDataException() {
+        // ARRANGE
+        when(repository.findById(productDTO.getId())).thenReturn(Optional.of(productEntity));
+        
+       
+        productDTO.setAmount(-5);
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.update(productDTO);
+        });
+
+        String expectedMessage = "Product stock amount cannot be negative.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+      @Test
+    @DisplayName("Should throw InvalidProductDataException when updating with a null amount")
+    void testUpdate_WithNullAmount_ShouldThrowInvalidProductDataException() {
+        // ARRANGE
+        when(repository.findById(productDTO.getId())).thenReturn(Optional.of(productEntity));
+        
+       
+        productDTO.setAmount(null);
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidProductDataException.class, () -> {
+            mockService.update(productDTO);
+        });
+
+        String expectedMessage = "Product stock amount cannot be negative.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
     }
 
     // --- DELETE Method Exceptions ---
 
     @Test
-     @Disabled
     @DisplayName("Should throw ResourceNotFoundException when trying to delete a non-existent product")
     void testDelete_WhenProductDoesNotExist_ShouldThrowResourceNotFoundException() {
+
+         Long nonExistentId = 99L;
+
+          when(repository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+          Exception exception = assertThrows(ResourceNotFoundException.class,
+        ()->{
+            mockService.delete(nonExistentId);
+        });
+
+         String expectedMessage = "Product not found with id: ";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
     @Test
-     @Disabled
-    @DisplayName("Should throw ProductInUseException when trying to delete a product that is in a purchase")
+    @DisplayName("Should throw ProductInUseException when trying alseto delete a product that is in a purchase")
     void testDelete_WhenProductIsInUse_ShouldThrowProductInUseException() {
+
+        when(repository.findById(productDTO.getId())).thenReturn(Optional.of(productEntity));
+
+        when(itemPurchaseRepository.existsByProductId(productDTO.getId())).thenReturn(true);
+
+        Exception exception = assertThrows(ProductInUseException.class ,
+        ()->{
+            mockService.delete(productDTO.getId());
+        });
+
+         String expectedMessage = "Cannot delete a product that is part of one or more existing purchases.";
+        String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
    

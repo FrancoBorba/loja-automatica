@@ -88,7 +88,16 @@ public class ProductService {
         Product entity = repository.findById(product.getId())
             .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + product.getId()));
 
-        // Aqui você pode adicionar as mesmas validações do `create` se necessário
+        if (product.getName() == null || product.getName().isBlank()) {
+            throw new InvalidProductDataException("Product name cannot be null or empty.");
+        }
+        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) < 0) {
+            throw new InvalidProductDataException("Product price cannot be negative.");
+        }
+        if (product.getAmount() == null || product.getAmount() < 0) {
+            throw new InvalidProductDataException("Product stock amount cannot be negative.");
+        }
+
         entity.setName(product.getName());
         entity.setAmount(product.getAmount());
         entity.setDescription(product.getDescription());
