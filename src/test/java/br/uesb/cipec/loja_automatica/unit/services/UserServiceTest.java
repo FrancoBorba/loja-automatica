@@ -1,5 +1,6 @@
 package br.uesb.cipec.loja_automatica.unit.services;
 
+import br.uesb.cipec.loja_automatica.DTO.UserDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
@@ -7,7 +8,9 @@ import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
 import br.uesb.cipec.loja_automatica.exception.InvalidUserDataException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
+import br.uesb.cipec.loja_automatica.model.Product;
 import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.repository.UserRepository;
 import br.uesb.cipec.loja_automatica.service.UserService;
@@ -23,6 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.hibernate.mapping.Any;
@@ -33,6 +38,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
@@ -48,6 +57,8 @@ public class UserServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private AuthenticationFacade authenticationFacade;
+
+    
 
     // Real service instance with injected mocks
     @InjectMocks
@@ -83,6 +94,155 @@ public class UserServiceTest {
         userResponseDTO.setId(1L);
 
         
+    }
+
+    // Research test
+
+    @Test
+    @DisplayName("Given an existing ID, when findById is called, then should return UserDTO")
+    void givenExistingId_whenFindById_thenReturnsUserDTO() {
+        // ARRANGE
+      
+        when(repository.findById(1L)).thenReturn(Optional.of(userEntity));
+     
+        when(mapper.toDTO(userEntity)).thenReturn(new UserDTO()); 
+
+        // ACT
+        UserDTO result = service.findById(1L);
+
+        // ASSERT
+        assertNotNull(result);
+        verify(repository, times(1)).findById(1L);
+        verify(mapper, times(1)).toDTO(userEntity);
+    }
+
+    @Test
+    @DisplayName("Given a non-existent ID, when findById is called, then should throw ResourceNotFoundException")
+    void givenNonExistentId_whenFindById_thenThrowsResourceNotFoundException() {
+        // ARRANGE
+ 
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            service.findById(99L);
+        });
+    }
+
+
+
+    @Test
+    @DisplayName("Given an existing email, when findByEmail is called, then should return UserDTO")
+    void givenExistingEmail_whenFindByEmail_thenReturnsUserDTO() {
+        // ARRANGE
+        when(repository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(userEntity));
+        when(mapper.toDTO(userEntity)).thenReturn(new UserDTO());
+
+        // ACT
+        UserDTO result = service.findByEmail("teste@gmail.com");
+
+        // ASSERT
+        assertNotNull(result);
+        verify(repository, times(1)).findByEmail("teste@gmail.com");
+    }
+
+    @Test
+    @DisplayName("Given a non-existent email, when findByEmail is called, then should throw ResourceNotFoundException")
+    void givenNonExistentEmail_whenFindByEmail_thenThrowsResourceNotFoundException() {
+        // ARRANGE
+        when(repository.findByEmail("wrong@email.com")).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            service.findByEmail("wrong@email.com");
+        });
+    }
+
+   
+
+    @Test
+    @DisplayName("Given an existing ID, when findByIdResponseDTO is called, then should return UserResponseDTO")
+    void givenExistingId_whenFindByIdResponseDTO_thenReturnsUserResponseDTO() {
+        // ARRANGE
+        when(repository.findById(1L)).thenReturn(Optional.of(userEntity));
+        when(mapper.toResponseDTO(userEntity)).thenReturn(userResponseDTO);
+
+        // ACT
+        UserResponseDTO result = service.findByIdResponseDTO(1L);
+
+        // ASSERT
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("Franco", result.getName());
+    }
+
+    @Test
+    @DisplayName("Given a non-existent ID, when findByIdResponseDTO is called, then should throw ResourceNotFoundException")
+    void givenNonExistentId_whenFindByIdResponseDTO_thenThrowsResourceNotFoundException() {
+        // ARRANGE
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            service.findByIdResponseDTO(99L);
+        });
+    }
+
+
+    @Test
+    @DisplayName("Given an existing email, when findByEmailResponseDTO is called, then should return UserResponseDTO")
+    void givenExistingEmail_whenFindByEmailResponseDTO_thenReturnsUserResponseDTO() {
+        // ARRANGE
+        when(repository.findByEmail("teste@gmail.com")).thenReturn(Optional.of(userEntity));
+        when(mapper.toResponseDTO(userEntity)).thenReturn(userResponseDTO);
+
+        // ACT
+        UserResponseDTO result = service.findByEmailResponseDTO("teste@gmail.com");
+
+        // ASSERT
+        assertNotNull(result);
+        assertEquals("teste@gmail.com", result.getEmail());
+    }
+
+    @Test
+    @DisplayName("Given a non-existent email, when findByEmailResponseDTO is called, then should throw ResourceNotFoundException")
+    void givenNonExistentEmail_whenFindByEmailResponseDTO_thenThrowsResourceNotFoundException() {
+        // ARRANGE
+        when(repository.findByEmail("wrong@email.com")).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            service.findByEmailResponseDTO("wrong@email.com");
+        });
+    }
+
+    @Test
+    void givenAPageOfUsers_WhenFindAll_ThenReturnPageOfPeople(){
+        // Arrange
+
+         List<User>  users = new ArrayList();
+      for(int i = 0 ; i < 10 ; i++){
+        users.add(userEntity);
+      }
+
+    Pageable pageableWithUsers = PageRequest.of(0, 10);
+
+    Page<User> pageImpl = new PageImpl<>(users , pageableWithUsers , 10L);
+
+    when(mapper.toResponseDTO(userEntity)).thenReturn(userResponseDTO);
+
+    when(repository.findAll(any(Pageable.class))).thenReturn(pageImpl);
+
+    // Act 
+    Page<UserResponseDTO> resultPage = service.findAll(pageableWithUsers);
+
+     assertNotNull(resultPage);
+    assertEquals(10, resultPage.getContent().size());
+    assertEquals("Franco", resultPage.getContent().get(0).getName());
+    assertEquals(1, resultPage.getTotalPages());
+    assertEquals(10L, resultPage.getTotalElements());
+
+
     }
 
     // --- Tests for create method---
@@ -140,11 +300,44 @@ public class UserServiceTest {
         assertEquals(expectedMessage, actualMessage);
     }
 
+     @Test
+    @DisplayName("Should throw InvalidUserDataException when creating with a null name")
+    void givenUserWithNullkName_whenCreate_thenThrowsInvalidUserDataException() {
+        // ARRANGE
+        userRegisterDTO.setName(null); // Prepara o dado inválido
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidUserDataException.class, () -> {
+            service.create(userRegisterDTO);
+        });
+
+        String expectedMessage = "User name cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
     @Test
     @DisplayName("Should throw InvalidUserDataException when creating with a blank email")
     void givenUserWithBlankEmail_whenCreate_thenThrowsInvalidUserDataException() {
         // ARRANGE
         userRegisterDTO.setEmail(""); // Prepara o dado inválido
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidUserDataException.class, () -> {
+            service.create(userRegisterDTO);
+        });
+
+        String expectedMessage = "User email cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+
+    @Test
+    @DisplayName("Should throw InvalidUserDataException when creating with a null email")
+    void givenUserWithNullEmail_whenCreate_thenThrowsInvalidUserDataException() {
+        // ARRANGE
+        userRegisterDTO.setEmail(null); // Prepara o dado inválido
 
         // ACT & ASSERT
         Exception exception = assertThrows(InvalidUserDataException.class, () -> {
@@ -238,35 +431,128 @@ public class UserServiceTest {
     
     // --- Testes para o método updateMyProfile ---
 
-@Test
+    @Test
+    void givenNullUser_whenUpdateMyProfile_ThenThowsExecpion(){
+
+        Exception exception = assertThrows(RequiredObjectIsNullException.class,
+         ()->{
+            service.update(null);
+         });
+
+        String expectedMessage = "It is not allowed to persist a null object!";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+    }
+
+    @Test
     @DisplayName("Given valid update data, when updateMyProfile is called, then should return updated user")
     void givenValidUpdateData_whenUpdateMyProfile_thenReturnsUpdatedUser() {
 
       // Given ; Arrange
         when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
 
+        LocalDate newBirthDate = LocalDate.of(2000, 01, 01);
         UserUpdateDTO updateRequestDTO = new UserUpdateDTO();
         updateRequestDTO.setName("Franco Atualizado");
         updateRequestDTO.setEmail("franco.atualizado@example.com");
-
-        when(repository.save(any(User.class))).thenReturn(userEntity);
-
-        when(mapper.toResponseDTO(any(User.class))).thenReturn(userResponseDTO);
+        updateRequestDTO.setDateOfBirth(newBirthDate);
 
       // When ; Act
-        UserResponseDTO result = service.update(updateRequestDTO);
+         service.update(updateRequestDTO);
 
       // Then ; Assert
         verify(repository, times(1)).save(userEntity);
 
         assertEquals("Franco Atualizado", userEntity.getName());
         assertEquals("franco.atualizado@example.com", userEntity.getEmail());
+        assertEquals(newBirthDate, userEntity.getDateOfBirth());
+
+        
+
+    }
+
+    @Test
+    @DisplayName("Given an update DTO with a null name, when updateMyProfile is called, then the original name should be kept")
+    void givenUpdateDtoWithNullName_whenUpdateMyProfile_thenOriginalNameShouldBeKept() {
+        // --- ARRANGE ---
+
+        when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+   
+        UserUpdateDTO updateRequestDTO = new UserUpdateDTO();
+        updateRequestDTO.setName(null); 
+        updateRequestDTO.setEmail("franco.novoemail@example.com");
+
+     
+        when(repository.save(any(User.class))).thenReturn(userEntity);
+        
+        // --- ACT ---
+
+        service.update(updateRequestDTO);
+
+        // --- ASSERT ---
+
+        verify(repository, times(1)).save(userEntity);
+        
+        assertEquals("Franco", userEntity.getName());
+       
+        assertEquals("franco.novoemail@example.com", userEntity.getEmail());
+    }
+    @Test
+    @DisplayName("Given an update DTO with a null name, when updateMyProfile is called, then the original name should be kept")
+    void givenUpdateDtoWithNullBirthday_whenUpdateMyProfile_thenOriginalBirthdayShouldBeKept() {
+        // --- ARRANGE ---
+
+        when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+   
+        UserUpdateDTO updateRequestDTO = new UserUpdateDTO();
+        updateRequestDTO.setDateOfBirth(null); 
+        updateRequestDTO.setEmail("franco.novoemail@example.com");
+
+     
+        when(repository.save(any(User.class))).thenReturn(userEntity);
+        
+        // --- ACT ---
+
+        service.update(updateRequestDTO);
+
+        // --- ASSERT ---
+
+        verify(repository, times(1)).save(userEntity);
+        
+        assertNotNull(updateRequestDTO);
+        assertEquals(birthDate , userEntity.getDateOfBirth());
+        assertEquals("franco.novoemail@example.com", userEntity.getEmail());
     }
 
     @Test
     @DisplayName("Given an email that belongs to another user, when updateMyProfile is called, then should throw exception")
     void givenExistingEmailForOtherUser_whenUpdateMyProfile_thenThrowsException() {
-        // TODO: Implementar a lógica do teste
+        // Given; Arrange
+
+        User otherUserWithSameEmail = new User();
+            otherUserWithSameEmail.setId(2L);
+            otherUserWithSameEmail.setEmail("email.repetido@example.com");
+
+        UserUpdateDTO updateRequestDTO = new UserUpdateDTO();
+        updateRequestDTO.setEmail("email.repetido@example.com");
+
+        when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+         when(repository.findByEmail("email.repetido@example.com"))
+         .thenReturn(Optional.of(otherUserWithSameEmail));
+
+        // When ; Act 
+
+          Exception exception = assertThrows(EmailAlreadyInUseException.class, () -> {
+            service.update(updateRequestDTO);
+        });
+
+        String expectedMessage = "Email already in use";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+   
     }
 
     // --- Delete Tests ---
@@ -281,7 +567,6 @@ public class UserServiceTest {
        when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
 
 
-
       // When , Act
 
       service.deleteMyAccount();
@@ -290,5 +575,86 @@ public class UserServiceTest {
      assertFalse(userEntity.isActive());
 
      verify(repository, times(1)).save(userEntity);
+    }
+
+    // Tests for enabled user
+
+     @Test
+    @DisplayName("Given an existing and enabled user, when isUserEnabled is called, then should return true")
+    void givenEnabledUser_whenIsUserEnabled_thenReturnsTrue() {
+        
+  
+        // Given ; Arrange
+       when(repository.isUserEnabled(1L)).thenReturn(Optional.of(true));
+
+        // When ; Act
+        Boolean enabled = service.isUserEnabled(1L);
+
+        // Then ; Assert
+        assertEquals(true, enabled);
+
+    }
+
+    @Test
+    @DisplayName("Given an existing but disabled user, when isUserEnabled is called, then should return false")
+    void givenDisabledUser_whenIsUserEnabled_thenReturnsFalse() {
+        
+
+       when(repository.isUserEnabled(1L)).thenReturn(Optional.of(false));
+
+        Boolean enabled = service.isUserEnabled(1L);
+
+        assertEquals(false, enabled);
+
+    }
+
+    @Test
+    @DisplayName("Given a non-existent user ID, when isUserEnabled is called, then should throw ResourceNotFoundException")
+    void givenNonExistentUser_whenIsUserEnabled_thenThrowsResourceNotFoundException() {
+
+        when(repository.isUserEnabled(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(ResourceNotFoundException.class,
+         () -> {
+            service.isUserEnabled(1L);
+         });
+
+        String expectedMessage = "User not found";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+       
+    }
+
+    @Test
+    @DisplayName("Given an existing user, when enableUser is called, then should set user to enabled and save")
+    void givenExistingUser_whenEnableUser_thenSetsEnabledToTrueAndSaves() {
+       
+       
+        when(repository.findById(1L)).thenReturn(Optional.of(userEntity));
+        userEntity.setEnabled(false);
+
+        service.enableUser(1L);
+
+        assertEquals(true, userEntity.isEnabled());
+       
+        verify(repository , times(1)).save(userEntity);
+    }
+
+    @Test
+    @DisplayName("Given a non-existent user ID, when enableUser is called, then should throw ResourceNotFoundException")
+    void givenNonExistentUser_whenEnableUser_thenThrowsResourceNotFoundException() {
+
+          when(repository.findById(1L)).thenReturn(Optional.empty());
+
+          Exception exception = assertThrows(ResourceNotFoundException.class, 
+          ()->{
+            service.enableUser(1L);
+          });
+
+
+        String expectedMessage = "User not found";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 }
