@@ -25,6 +25,7 @@ import br.uesb.cipec.loja_automatica.exception.InsufficientStockException;
 import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
 import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
 import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseStatusException;
+import br.uesb.cipec.loja_automatica.exception.InvalidUserDataException;
 import br.uesb.cipec.loja_automatica.exception.ProductInUseException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
@@ -70,6 +71,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         EmptyCartException.class, 
         InsufficientStockException.class, 
         InvalidProductDataException.class, 
+        InvalidUserDataException.class,
         InvalidPurchaseQuantityException.class, 
         TokenExpiredException.class, 
         RequiredObjectIsNullException.class})
