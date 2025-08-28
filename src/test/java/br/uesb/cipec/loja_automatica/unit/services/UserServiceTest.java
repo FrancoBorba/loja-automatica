@@ -2,14 +2,18 @@ package br.uesb.cipec.loja_automatica.unit.services;
 
 import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
 import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
+import br.uesb.cipec.loja_automatica.exception.InvalidUserDataException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
 import br.uesb.cipec.loja_automatica.model.User;
 import br.uesb.cipec.loja_automatica.repository.UserRepository;
 import br.uesb.cipec.loja_automatica.service.UserService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import org.hibernate.mapping.Any;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,7 +61,7 @@ public class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        LocalDate birthDate = LocalDate.of(2003, 11, 14);
+        birthDate = LocalDate.of(2003, 11, 14);
 
         userEntity = new User();
         userEntity.setEmail("teste@gmail.com");
@@ -117,6 +122,56 @@ public class UserServiceTest {
 
     }
 
+
+
+    @Test
+    @DisplayName("Should throw InvalidUserDataException when creating with a blank name")
+    void givenUserWithBlankName_whenCreate_thenThrowsInvalidUserDataException() {
+        // ARRANGE
+        userRegisterDTO.setName(""); // Prepara o dado inválido
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidUserDataException.class, () -> {
+            service.create(userRegisterDTO);
+        });
+
+        String expectedMessage = "User name cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidUserDataException when creating with a blank email")
+    void givenUserWithBlankEmail_whenCreate_thenThrowsInvalidUserDataException() {
+        // ARRANGE
+        userRegisterDTO.setEmail(""); // Prepara o dado inválido
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidUserDataException.class, () -> {
+            service.create(userRegisterDTO);
+        });
+
+        String expectedMessage = "User email cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidUserDataException when creating with a blank password")
+    void givenUserWithBlankPassword_whenCreate_thenThrowsInvalidUserDataException() {
+        // ARRANGE
+        userRegisterDTO.setPassword(""); // Prepara o dado inválido
+
+        // ACT & ASSERT
+        Exception exception = assertThrows(InvalidUserDataException.class, () -> {
+            service.create(userRegisterDTO);
+        });
+
+        String expectedMessage = "User password cannot be null or empty.";
+        String actualMessage = exception.getMessage();
+        assertEquals(expectedMessage, actualMessage);
+    }
+
     @Test
     @DisplayName("Given an already registered email, when create is called, then should throw IllegalArgumentException")
     void givenExistingEmail_whenCreate_thenThrowsException() {
@@ -143,7 +198,18 @@ public class UserServiceTest {
     @Test
     @DisplayName("Given a null user DTO, when create is called, then should throw RequiredObjectIsNullException")
     void givenNullUser_whenCreate_thenThrowsException() {
-  
+
+        // Act| Assert
+        Exception exception = assertThrows(RequiredObjectIsNullException.class, 
+        () -> {
+            service.create(null);
+        });
+
+      String expectedMessage = "User cannot be null.";
+      String actualMessage = exception.getMessage();
+
+        assertTrue(actualMessage.contains(expectedMessage));
+        assertEquals(expectedMessage,actualMessage);
     }
 
     // --- Testes para o método getMyProfile ---
@@ -151,14 +217,50 @@ public class UserServiceTest {
     @Test
     @DisplayName("Given an authenticated user, when getMyProfile is called, then should return their profile")
     void givenAuthenticatedUser_whenGetMyProfile_thenReturnsUserProfile() {
+
+      // Given ; Arrange
+      when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+      when(mapper.toResponseDTO(userEntity)).thenReturn(userResponseDTO);
+
+      // when ; act
+
+        UserResponseDTO responseAuthentication = service.getMyProfile();
+
+      // Then , Assert 
+
+      assertNotNull(responseAuthentication);
+      assertEquals(userResponseDTO, responseAuthentication);
+      assertEquals(userResponseDTO.getName(), responseAuthentication.getName());
+      assertEquals(userResponseDTO.getEmail(), responseAuthentication.getEmail());
+
     }
     
     // --- Testes para o método updateMyProfile ---
 
-    @Test
+@Test
     @DisplayName("Given valid update data, when updateMyProfile is called, then should return updated user")
     void givenValidUpdateData_whenUpdateMyProfile_thenReturnsUpdatedUser() {
-        // TODO: Implementar a lógica do teste
+
+      // Given ; Arrange
+        when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+        UserUpdateDTO updateRequestDTO = new UserUpdateDTO();
+        updateRequestDTO.setName("Franco Atualizado");
+        updateRequestDTO.setEmail("franco.atualizado@example.com");
+
+        when(repository.save(any(User.class))).thenReturn(userEntity);
+
+        when(mapper.toResponseDTO(any(User.class))).thenReturn(userResponseDTO);
+
+      // When ; Act
+        UserResponseDTO result = service.update(updateRequestDTO);
+
+      // Then ; Assert
+        verify(repository, times(1)).save(userEntity);
+
+        assertEquals("Franco Atualizado", userEntity.getName());
+        assertEquals("franco.atualizado@example.com", userEntity.getEmail());
     }
 
     @Test
@@ -167,11 +269,26 @@ public class UserServiceTest {
         // TODO: Implementar a lógica do teste
     }
 
-    // --- Testes para o método deleteMyAccount ---
+    // --- Delete Tests ---
 
     @Test
     @DisplayName("Given an authenticated user, when deleteMyAccount is called, then should perform a soft delete")
     void givenAuthenticatedUser_whenDeleteMyAccount_thenPerformsSoftDelete() {
-        // TODO: Implementar a lógica do teste
+       // Given , Arrange
+
+       userEntity.setActive(true);
+
+       when(authenticationFacade.getCurrentUser()).thenReturn(userEntity);
+
+
+
+      // When , Act
+
+      service.deleteMyAccount();
+
+      // Then , Assert
+     assertFalse(userEntity.isActive());
+
+     verify(repository, times(1)).save(userEntity);
     }
 }
