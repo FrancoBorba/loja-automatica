@@ -37,15 +37,16 @@ public class ItemPurchaseService {
 
     @Transactional
     public PurchaseResponseDTO addItemToCart(ItemPurchaseRequestDTO itemRequest) {
-        // 1. Validação de objeto nulo
+       
         if (itemRequest == null) {
             throw new RequiredObjectIsNullException("The item to be added to the cart cannot be null.");
         }
-        // 2. Validação de quantidade
+       
         if (itemRequest.getQuantity() <= 0) {
             throw new InvalidPurchaseQuantityException("The quantity of an item to be added must be greater than zero.");
         }
 
+            
         Purchase activeCart = getOrCreateActiveCartForCurrentUser();
 
         Optional<ItemPurchase> existingItemOpt = activeCart.getItens().stream()
