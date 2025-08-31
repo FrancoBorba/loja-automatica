@@ -21,6 +21,7 @@ import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.UserRole;
 import br.uesb.cipec.loja_automatica.exception.BadCredentialsException;
 import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
+import br.uesb.cipec.loja_automatica.exception.InvalidUserDataException;
 import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
 import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.UserMapper;
@@ -53,6 +54,15 @@ public class UserService {
         if (user == null) {
             throw new RequiredObjectIsNullException("User cannot be null.");
         }
+      if (user.getName() == null || user.getName().isBlank()) {
+        throw new InvalidUserDataException("User name cannot be null or empty.");
+    }
+    if (user.getEmail() == null || user.getEmail().isBlank()) {
+        throw new InvalidUserDataException("User email cannot be null or empty.");
+    }
+    if (user.getPassword() == null || user.getPassword().isBlank()) {
+        throw new InvalidUserDataException("User password cannot be null or empty.");
+    }
         if (repository.findByEmail(user.getEmail()).isPresent()){
            throw new EmailAlreadyInUseException("Email already in use.");
         }
