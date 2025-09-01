@@ -3,6 +3,9 @@ package br.uesb.cipec.loja_automatica.unit.services;
 import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
 import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
 import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
+import br.uesb.cipec.loja_automatica.exception.EmptyCartException;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseStatusException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
 import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
 import br.uesb.cipec.loja_automatica.model.ItemPurchase;
 import br.uesb.cipec.loja_automatica.model.Product;
@@ -16,8 +19,11 @@ import br.uesb.cipec.loja_automatica.service.StockService;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +47,8 @@ import org.springframework.data.domain.Pageable;
 import com.stripe.exception.StripeException;
 
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @ExtendWith(MockitoExtension.class)
 class PurchaseServiceTest {
@@ -114,7 +122,7 @@ class PurchaseServiceTest {
       @Test
     @DisplayName("Should return a paginated list of all purchases for an admin")
     void shouldFindAllPurchasesSuccessfully() {
-        // --- ARRANGE (Preparar o cenário) ---
+        // --- ARRANGE ---
 
         List<Purchase> purchaseList = List.of(activeCart);
 
@@ -171,21 +179,96 @@ class PurchaseServiceTest {
         verify(purchaseRepository, times(1)).findById(1L);
         verify(purchaseMapper, times(1)).toResponseDTO(activeCart);
     }
-
-   @Test
+    @ParameterizedTest
     @DisplayName("Should return a filtered list of purchases for the current user when a status is provided")
-    void givenStatus_whenFindPurchasesByCurrentUser_thenReturnsFilteredPage() {
+    @EnumSource(StatusPurchase.class)
+    void givenStatus_whenFindPurchasesByCurrentUser_thenReturnsFilteredPage(StatusPurchase status) {
 
+      // Given ; Arrange
+      List<Purchase> purchaseList = List.of(activeCart);
+
+      Pageable pageable = PageRequest.of(0, 10);
+
+      Page<Purchase> purchasePage = new PageImpl<>(purchaseList, pageable, 1L);
+
+      when(authenticationFacade.getCurrentUser()).thenReturn(currentUser);
+
+     when(purchaseRepository.findByUserIdAndStatus(anyLong(), any(StatusPurchase.class), any(Pageable.class)))
+            .thenReturn(purchasePage);
+
+        PurchaseResponseDTO responseDTO = new PurchaseResponseDTO();
+        responseDTO.setId(activeCart.getId());
+        when(purchaseMapper.toResponseDTO(activeCart)).thenReturn(responseDTO);
+
+      // When ; Act
+      Page<PurchaseResponseDTO> resultPage = purchaseService
+      .findPurchasesByCurrentUser(status, pageable);
+
+      // Then ; Assert
+
+
+        assertNotNull(resultPage);
+        assertFalse(resultPage.getContent().isEmpty());
+        assertEquals(1, resultPage.getContent().size());
+        assertEquals(1L, resultPage.getContent().get(0).getId()); 
+
+        assertEquals(1, resultPage.getTotalPages());
+        assertEquals(1L, resultPage.getTotalElements());
+        assertEquals(0, resultPage.getNumber());
+
+      verify(purchaseRepository, times(1)).findByUserIdAndStatus(
+          eq(currentUser.getId()), 
+          eq(status), 
+          any(Pageable.class)
+      );
+        
+        verify(purchaseRepository, never()).findByUserId(anyLong(), any(Pageable.class));
     }
 
     @Test
     @DisplayName("Should return an unfiltered list of all purchases for the current user when status is null")
     void givenNullStatus_whenFindPurchasesByCurrentUser_thenReturnsUnfilteredPage() {
-       
+        // Given ; Arrange
+      List<Purchase> purchaseList = List.of(activeCart);
+
+      Pageable pageable = PageRequest.of(0, 10);
+
+      Page<Purchase> purchasePage = new PageImpl<>(purchaseList, pageable, 1L);
+
+      when(authenticationFacade.getCurrentUser()).thenReturn(currentUser);
+
+     when(purchaseRepository.findByUserId(1L, pageable))
+            .thenReturn(purchasePage);
+
+
+        PurchaseResponseDTO responseDTO = new PurchaseResponseDTO();
+        responseDTO.setId(activeCart.getId());
+        when(purchaseMapper.toResponseDTO(activeCart)).thenReturn(responseDTO);
+
+      // When ; Act
+      
+      Page<PurchaseResponseDTO> resultPage = purchaseService.findPurchasesByCurrentUser(null, pageable);
+
+      // Then ; Assert
+
+
+        assertNotNull(resultPage);
+        assertFalse(resultPage.getContent().isEmpty());
+        assertEquals(1, resultPage.getContent().size());
+        assertEquals(1L, resultPage.getContent().get(0).getId()); 
+
+        assertEquals(1, resultPage.getTotalPages());
+        assertEquals(1L, resultPage.getTotalElements());
+        assertEquals(0, resultPage.getNumber());
+        
+      verify(purchaseRepository, times(1)).findByUserId(anyLong() , any(Pageable.class));
+  
+        
+
     }
 
     @Test
-    @DisplayName("Deve deletar uma compra com sucesso (delete)")
+    @DisplayName("Must delete a cart successfully (delete)")
     void shouldDeletePurchaseSuccessfully() {
 
       // Given ; Arrange
@@ -199,8 +282,27 @@ class PurchaseServiceTest {
     }
 
     @Test
-    @DisplayName("Deve retornar o carrinho ativo do usuário com sucesso (findActiveCartByUser)")
+    @DisplayName("Must return user's active cart successfully (findActiveCartByUser)")
     void shouldFindActiveCartByUserSuccessfully() {
+      // Given ; Arrange
+
+      when(authenticationFacade.getCurrentUser()).thenReturn(currentUser); 
+
+      when(purchaseRepository.findByUserIdAndStatus(anyLong(), any(StatusPurchase.class)))
+      .thenReturn(Optional.of(activeCart));
+
+      when(purchaseMapper.toResponseDTO(activeCart)).thenReturn(purchaseResponseDTO);
+
+      // When ; Act
+
+      Optional<PurchaseResponseDTO> result = purchaseService.findActiveCartByUser();
+
+      // Then ; Assert
+
+      assertNotNull(result);
+      assertEquals(1L, result.get().getId());
+      assertEquals(StatusPurchase.AGUARDANDO_PAGAMENTO, result.get().getStatus());
+      assertEquals(new BigDecimal("250.00"), result.get().getValue());
 
     }
 
@@ -215,9 +317,9 @@ class PurchaseServiceTest {
 
       when(stripeService.creatCheckoutSesion(activeCart)).thenReturn("www.stripepage.com.br");
 
-    String result =  purchaseService.checkout();
+      String result =  purchaseService.checkout();
 
-    assertEquals("www.stripepage.com.br" , result);
+      assertEquals("www.stripepage.com.br" , result);
 
     }
 
@@ -240,29 +342,79 @@ class PurchaseServiceTest {
     }
 
     // --- UNHAPPY PATH TESTS ---
-
-    @Test
-    @DisplayName("Deve lançar exceção ao buscar compra inexistente (findById)")
+ @Test
+    @DisplayName("Should throw ResourceNotFoundException when finding a non-existent purchase by ID")
     void shouldThrowWhenPurchaseNotFoundById() {
+        // ARRANGE
+        // "Ensina" o repositório a não encontrar nada com este ID.
+        when(purchaseRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            purchaseService.findById(99L);
+        });
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao tentar deletar compra inexistente (delete)")
+    @DisplayName("Should throw ResourceNotFoundException when trying to delete a non-existent purchase")
     void shouldThrowWhenDeletingNonexistentPurchase() {
+        // ARRANGE
+        when(purchaseRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            purchaseService.delete(99L);
+        });
+
+        // Garante que o método 'delete' do repositório nunca foi chamado.
+        verify(purchaseRepository, never()).delete(any(Purchase.class));
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao não encontrar carrinho ativo (checkout)")
+    @DisplayName("Should throw ResourceNotFoundException on checkout when no active cart is found")
     void shouldThrowWhenActiveCartNotFoundOnCheckout() {
+        // ARRANGE
+     
+        when(authenticationFacade.getCurrentUser()).thenReturn(currentUser);
+        when(purchaseRepository.findByUserIdAndStatus(anyLong(), any()))
+            .thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(ResourceNotFoundException.class, () -> {
+            purchaseService.checkout();
+        });
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao tentar fazer checkout com carrinho vazio (checkout)")
+    @DisplayName("Should throw EmptyCartException when checking out with an empty cart")
     void shouldThrowWhenCheckoutWithEmptyCart() {
+        // ARRANGE
+       
+        activeCart.getItens().clear(); 
+        when(authenticationFacade.getCurrentUser()).thenReturn(currentUser);
+        when(purchaseRepository.findByUserIdAndStatus(anyLong(), any()))
+            .thenReturn(Optional.of(activeCart));
+
+        // ACT & ASSERT
+        assertThrows(EmptyCartException.class, () -> {
+            purchaseService.checkout();
+        });
     }
 
     @Test
-    @DisplayName("Deve lançar exceção ao confirmar pagamento em estado inválido (confirmPayment)")
+    @DisplayName("Should throw InvalidPurchaseStatusException when confirming a payment that is not awaiting")
     void shouldThrowWhenConfirmPaymentWithInvalidStatus() {
+        // ARRANGE
+        activeCart.setStatus(StatusPurchase.PAGO);
+        when(purchaseRepository.findById(anyLong())).thenReturn(Optional.of(activeCart));
+
+        // ACT & ASSERT
+        assertThrows(InvalidPurchaseStatusException.class, () -> {
+            purchaseService.confirmPayment(activeCart.getId());
+        });
+
+        verify(stockService, never()).debitStock(any());
+        verify(purchaseRepository, never()).save(any(Purchase.class));
     }
+
 }
