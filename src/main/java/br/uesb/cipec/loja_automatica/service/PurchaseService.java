@@ -36,7 +36,7 @@ public class PurchaseService {
 
     private final Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());
 
-    // --- MÉTODOS PARA O HISTÓRICO DE COMPRAS (PurchaseController) ---
+    // --- METHODS FOR PURCHASE HISTORY (PurchaseController) ---
 
     @Transactional(readOnly = true)
     public Page<PurchaseResponseDTO> findAll(Pageable pageable) {
@@ -71,14 +71,14 @@ public class PurchaseService {
         purchaseRepository.delete(purchase);
     }
 
-    // --- MÉTODOS PARA O CARRINHO ATIVO (Usados pelo CartController) ---
+    // METHODS FOR ACTIVE CART (Used by CartController)
+
 
     @Transactional(readOnly = true)
     public Optional<PurchaseResponseDTO> findActiveCartByUser() {
         logger.info("Finding active cart for the current user.");
         User currentUser = authenticationFacade.getCurrentUser();
-        
-        // CORREÇÃO: Usando o método que já existe e retorna Optional
+
         return purchaseRepository
             .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
             .map(purchaseMapper::toResponseDTO);
@@ -88,7 +88,7 @@ public class PurchaseService {
     public String checkout() throws StripeException {
         logger.info("Initiating checkout for the active cart.");
         
-        // CORREÇÃO: Usando o método que já existe e retorna Optional
+       
         Purchase cartToCheckout = purchaseRepository
             .findByUserIdAndStatus(authenticationFacade.getCurrentUser().getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)
             .orElseThrow(() -> new ResourceNotFoundException("No active cart found to checkout."));
@@ -100,7 +100,7 @@ public class PurchaseService {
         return stripeService.creatCheckoutSesion(cartToCheckout);
     }
 
-    // --- MÉTODO CHAMADO PELO WEBHOOK ---
+    // METHOD CALLED BY WEBHOOK
 
     @Transactional
     public void confirmPayment(Long purchaseId) {
@@ -117,13 +117,9 @@ public class PurchaseService {
         }
     }
 
-    // --- MÉTODOS DE APOIO / SEGURANÇA ---
-    
-    public boolean isOwner(Long purchaseId, Long userId) {
-        return purchaseRepository.findById(purchaseId)
-                .map(purchase -> purchase.getUser().getId().equals(userId))
-                .orElse(false);
-    }
+    //  SUPPORT METHODS
+
+ 
 
     private Purchase findPurchaseById(Long id) {
         return purchaseRepository.findById(id)
