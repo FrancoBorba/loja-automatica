@@ -28,8 +28,11 @@ import br.uesb.cipec.loja_automatica.repository.UserRepository;
 import br.uesb.cipec.loja_automatica.security.JwtUtil;
 import br.uesb.cipec.loja_automatica.service.index.ProductIndexingService;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,6 +67,7 @@ public class ProductControllerIT extends AbstractIntegrationTest {
     void setUp(){
 
         productRepository.deleteAll(); // Clean the repository
+        userRepository.deleteAll();
 
         
         product = new Product();
@@ -223,6 +227,87 @@ public class ProductControllerIT extends AbstractIntegrationTest {
                     .content(objectMapper.writeValueAsString(dto)))
 
                 .andExpect(status().isBadRequest());
+    }
+
+        // --- Testes para PUT /api/products/{id} ---
+
+    @Test
+    @DisplayName("Given valid update data, when calling update as ADMIN, then should return 200 OK")
+    void givenValidData_whenUpdateAsAdmin_thenReturnsOk() throws Exception {
+ 
+        Product savedProduct = productRepository.save(product);
+        Long productId = savedProduct.getId();
+        
+  
+        ProductDTO updatedDto = new ProductDTO();
+        updatedDto.setName("Nome Atualizado");
+        updatedDto.setPrice(new BigDecimal("99.99"));
+        updatedDto.setAmount(5);
+        updatedDto.setDescription("Descrição Atualizada");
+
+    
+        String adminToken = getJwtToken("admin-update@test.com", UserRole.ADMIN);
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/products/{id}", productId)
+                    .header("Authorization", "Bearer " + adminToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(updatedDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(productId))
+                .andExpect(jsonPath("$.name").value("Nome Atualizado"))
+                .andExpect(jsonPath("$.price").value(99.99));
+    }
+
+    @Test
+    @DisplayName("Given valid update data, when calling update as USER, then should return 403 Forbidden")
+    void givenValidData_whenUpdateAsUser_thenReturnsForbidden() throws Exception {
+        // ARRANGE
+        Product savedProduct = productRepository.save(product);
+        Long productId = savedProduct.getId();
+        ProductDTO updatedDto = new ProductDTO(); 
+        
+     
+        String userToken = getJwtToken("user-update@test.com", UserRole.USER);
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/products/{id}", productId)
+                    .header("Authorization", "Bearer " + userToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(updatedDto)))
+                .andExpect(status().isForbidden()); 
+    }
+
+
+
+    @Test
+    @DisplayName("Given an existing product ID, when calling delete as ADMIN, then should return 204 No Content")
+    void givenExistingId_whenDeleteAsAdmin_thenReturnsNoContent() throws Exception {
+        // ARRANGE
+        Product savedProduct = productRepository.save(product);
+        Long productId = savedProduct.getId();
+        String adminToken = getJwtToken("admin-delete@test.com", UserRole.ADMIN);
+        
+        // ACT & ASSERT
+        mockMvc.perform(delete("/api/products/{id}", productId)
+                    .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+ 
+        assertFalse(productRepository.findById(productId).isPresent());
+    }
+    
+    @Test
+    @DisplayName("Given an existing product ID, when calling delete as USER, then should return 403 Forbidden")
+    void givenExistingId_whenDeleteAsUser_thenReturnsForbidden() throws Exception {
+        // ARRANGE
+        Product savedProduct = productRepository.save(product);
+        Long productId = savedProduct.getId();
+        String userToken = getJwtToken("user-delete@test.com", UserRole.USER);
+        
+        // ACT & ASSERT
+        mockMvc.perform(delete("/api/products/{id}", productId)
+                    .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isForbidden());
     }
 
 

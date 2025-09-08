@@ -94,7 +94,7 @@ public class ControllerProduct implements ProductsControllerDocs {
     }
 
      @Override
-    @PutMapping(
+    @PutMapping( value = "/{id}" ,
         consumes =  { 
         MediaType.APPLICATION_JSON_VALUE ,
         MediaType.APPLICATION_XML_VALUE ,
@@ -104,7 +104,8 @@ public class ControllerProduct implements ProductsControllerDocs {
         MediaType.APPLICATION_XML_VALUE ,
         MediaType.APPLICATION_YAML_VALUE}
     )
-    public ProductDTO update(@RequestBody @Valid ProductDTO product){
+    public ProductDTO update(@PathVariable("id") Long id , @RequestBody @Valid ProductDTO product){
+        product.setId(id);
         return service.update(product);
     }
 
