@@ -29,7 +29,7 @@ public class LojaAutomaticaApplication {
 		SpringApplication.run(LojaAutomaticaApplication.class, args);
 	}
 
-    /* 
+    
      @Bean
     public CommandLineRunner initialIndexer(ProductIndexingService indexingService) {
         return args -> {
@@ -37,5 +37,5 @@ public class LojaAutomaticaApplication {
             indexingService.indexAllProductsFromDatabase();
             System.out.println("--- Indexação inicial concluída ---");
         };
-    }*/
+    }
 }

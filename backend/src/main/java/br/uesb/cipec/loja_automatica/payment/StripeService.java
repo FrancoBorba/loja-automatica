@@ -47,7 +47,7 @@ public class StripeService {
         SessionCreateParams param = SessionCreateParams.builder()
         .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD) // Only pix
         .setMode(SessionCreateParams.Mode.PAYMENT)// Only payments
-        //.setSuccessUrl(successUrl)
+        .setSuccessUrl(successUrl)
         .setCancelUrl(cancelUrl) 
         .addAllLineItem(lineItems)
         .putMetadata("purchaseId", cart.getId().toString())
