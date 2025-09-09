@@ -1,0 +1,52 @@
+services:
+
+  loja-api:
+    build: . 
+    container_name: loja-api-springboot
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+    
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/loja_automatica
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_PROFILES_ACTIVE: local 
+    depends_on:
+      postgres-db: 
+        condition: service_healthy
+
+
+  postgres-db:
+    image: postgres:16
+    container_name: loja-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Lê a senha do arquivo .env
+      POSTGRES_DB: loja_automatica
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck: # 4. Define um "teste de saúde" para o banco
+      test: ["CMD-SHELL", "pg_isready -U postgres -d loja_automatica"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.0
+    container_name: loja-elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+
+volumes:
+  postgres-data:
+  elastic-data:
