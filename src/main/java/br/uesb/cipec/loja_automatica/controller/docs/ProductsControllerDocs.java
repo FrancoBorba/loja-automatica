@@ -127,7 +127,7 @@ public interface ProductsControllerDocs {
       @ApiResponse(description = "Internal Server Erros" , responseCode = "500" , content = @Content),
     }
   ) 
-  ProductDTO update(ProductDTO product);
+  ProductDTO update(Long id ,ProductDTO product);
 
    @Operation(
     summary = "Delete a product" ,
