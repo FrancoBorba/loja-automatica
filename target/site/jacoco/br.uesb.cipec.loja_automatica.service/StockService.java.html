@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StockService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">StockService.java</span></div><h1>StockService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.uesb.cipec.loja_automatica.exception.InsufficientStockException;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.model.ItemPurchase;
+import br.uesb.cipec.loja_automatica.model.Product;
+import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+
+@Service
+<span class="nc" id="L19">public class StockService {</span>
+
+  @Autowired
+  ProductRepository productRepository;
+
+  @Transactional(rollbackFor = Exception.class)
+  public Boolean debitStock(List&lt;ItemPurchase&gt; items){
+<span class="nc bnc" id="L26" title="All 2 branches missed.">    if (items == null) {</span>
+<span class="nc" id="L27">      throw new RequiredObjectIsNullException(&quot;The list of items to purchase cannot be null.&quot;);</span>
+    }
+    
+<span class="nc bnc" id="L30" title="All 2 branches missed.">    for(ItemPurchase item : items){</span>
+<span class="nc" id="L31">      Product product = productRepository.findByIdWithLock(item.getProduct().getId())</span>
+<span class="nc" id="L32">      .orElseThrow(() -&gt; new  ResourceNotFoundException(&quot;Product not found: &quot; + item.getProduct().getId()));</span>
+
+<span class="nc bnc" id="L34" title="All 2 branches missed.">      if (item.getQuantity() &lt;= 0) {</span>
+<span class="nc" id="L35">        throw new InvalidPurchaseQuantityException(</span>
+<span class="nc" id="L36">            &quot;Purchase quantity for product with id &quot; + item.getProduct().getId() + &quot; must be greater than zero.&quot;</span>
+        );
+      }
+
+
+<span class="nc" id="L41">      int quantityInStock = product.getAmount();</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">      if(quantityInStock &gt;= item.getQuantity()){</span>
+<span class="nc" id="L43">        product.setAmount(quantityInStock - item.getQuantity());</span>
+<span class="nc" id="L44">        productRepository.save(product);</span>
+      } else{
+<span class="nc" id="L46">         throw new InsufficientStockException(&quot;Insufficient stock for the product: &quot; + product.getName());</span>
+      }
+
+<span class="nc" id="L49">    }</span>
+<span class="nc" id="L50">    return true;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

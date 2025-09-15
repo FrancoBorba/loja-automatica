@@ -1,0 +1,149 @@
+/* Importa a fonte Poppins do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+.login-page-container {
+  /* Fundo verde degradê como no Figma */
+  background: linear-gradient(135deg, rgba(213, 255, 64, 0.4), rgba(25, 25, 23, 0.2));
+  background-color: #191917; /* Cor de fundo principal */
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Poppins', sans-serif; /* Usa a fonte Poppins */
+}
+
+.login-card {
+  background-color: rgba(44, 44, 44, 0.9); /* Fundo do card cinza escuro, semi-transparente */
+  backdrop-filter: blur(10px); /* Efeito de vidro fosco, se o navegador suportar */
+  padding: 40px;
+  border-radius: 20px; /* Bordas bem arredondadas */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 420px;
+  color: #FFFFFF;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.login-logo {
+  width: 60px; /* Ajuste o tamanho da sua logo */
+  margin-bottom: 15px;
+}
+
+.login-title {
+  font-size: 2.5em;
+  font-weight: 700; /* Bold */
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Espaçamento entre os grupos */
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #C0C2B7; /* Cor do texto do label */
+  font-size: 0.9em;
+  font-weight: 400; /* Regular */
+}
+
+.form-input {
+  width: 95%;
+  padding: 14px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #333333;
+  color: #FFFFFF;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.form-input::placeholder {
+  color: #777;
+}
+
+.form-input:focus {
+  border-color: #D5FF40; /* Destaque verde ao focar */
+}
+
+.login-button {
+  background-color: #D5FF40; /* Cor verde limão principal */
+  color: #191917; /* Texto escuro para contraste */
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: 700; /* Bold */
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  margin-top: 10px;
+}
+
+.login-button:hover {
+  transform: scale(1.03); /* Efeito de crescimento sutil */
+}
+
+.login-links {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  margin-top: -10px;
+}
+
+.link {
+  color: #C0C2B7;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  text-align: center;
+  color: #888;
+  margin: 15px 0;
+  font-size: 0.9em;
+}
+
+.social-login {
+  display: flex;
+  justify-content: center; /* Centraliza os botões horizontalmente */
+  gap: 20px; /* Espaço entre os botões */
+}
+
+.social-button {
+  background-color: #2C2C2C;
+  border: 1px solid #555;
+  border-radius: 50%; /* Deixa o botão redondo */
+  width: 55px;
+  height: 55px;
+  cursor: pointer;
+  
+  /* A MÁGICA PARA CENTRALIZAR O ÍCONE */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  transition: background-color 0.3s ease;
+}
+
+.social-button:hover {
+  background-color: #3f3f3f;
+}
+
+/* Nova regra para controlar o tamanho do ícone DENTRO do botão */
+.social-icon {
+  width: 24px;
+  height: 24px;
+}

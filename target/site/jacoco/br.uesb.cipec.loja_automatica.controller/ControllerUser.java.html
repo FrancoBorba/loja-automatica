@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControllerUser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.controller</a> &gt; <span class="el_source">ControllerUser.java</span></div><h1>ControllerUser.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.controller;
+
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
+import br.uesb.cipec.loja_automatica.controller.docs.UserControllerDocs;
+import br.uesb.cipec.loja_automatica.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping(&quot;/api/users&quot;)
+@Tag(name = &quot;User&quot; , description = &quot;Endpoints for managing users&quot;)
+<span class="nc" id="L33">public class ControllerUser implements UserControllerDocs {</span>
+    
+    @Autowired
+    UserService service;
+
+    @Override
+    @GetMapping(value =&quot;/{id}&quot; ,
+    produces = {
+    MediaType.APPLICATION_JSON_VALUE,
+    MediaType.APPLICATION_XML_VALUE,
+    MediaType.APPLICATION_YAML_VALUE
+    }
+    )
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public UserResponseDTO findByID( @PathVariable(&quot;id&quot;) Long id ){
+<span class="nc" id="L48">        return service.findByIdResponseDTO(id);</span>
+    }
+
+     @Override
+    @GetMapping(  
+    produces = { 
+      MediaType.APPLICATION_JSON_VALUE,
+      MediaType.APPLICATION_XML_VALUE ,
+      MediaType.APPLICATION_YAML_VALUE}
+      )
+  @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;Page&lt;UserResponseDTO&gt;&gt; findAll(
+     @RequestParam(value = &quot;page&quot; , defaultValue = &quot;0&quot;) Integer page,
+      @RequestParam(value = &quot;size&quot; , defaultValue = &quot;10&quot;) Integer size,
+      @RequestParam(value = &quot;direction&quot; , defaultValue = &quot;asc&quot;) String direction
+  ){ 
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">      var sortDirection = &quot;desc&quot;.equalsIgnoreCase(direction) ? Direction.DESC : Direction.ASC;</span>
+
+<span class="nc" id="L67">      Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection,&quot;name&quot;));</span>
+
+<span class="nc" id="L69">      return ResponseEntity.ok(service.findAll(pageable));</span>
+    }
+
+     @Override
+    @PutMapping( value = &quot;/me&quot; ,
+        consumes =  { 
+        MediaType.APPLICATION_JSON_VALUE ,
+        MediaType.APPLICATION_XML_VALUE ,
+        MediaType.APPLICATION_YAML_VALUE} ,
+        produces = { 
+        MediaType.APPLICATION_JSON_VALUE ,
+        MediaType.APPLICATION_XML_VALUE ,
+        MediaType.APPLICATION_YAML_VALUE}
+    )
+    public UserResponseDTO update(@RequestBody @Valid UserUpdateDTO user){
+<span class="nc" id="L84">        return service.update(user);</span>
+    }
+
+    @Override
+    @DeleteMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;?&gt; delete(){
+<span class="nc" id="L90">        service.deleteMyAccount();</span>
+<span class="nc" id="L91">        return ResponseEntity.noContent().build(); // return the right status code (204)</span>
+    }
+
+
+   
+    @GetMapping(&quot;/me&quot;)
+    public UserResponseDTO getMyProfile() {
+<span class="nc" id="L98">        return service.getMyProfile();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

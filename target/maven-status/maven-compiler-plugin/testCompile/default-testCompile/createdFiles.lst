@@ -1,0 +1,5 @@
+br\uesb\cipec\loja_automatica\unit\services\UserServiceTest.class
+br\uesb\cipec\loja_automatica\unit\services\PurchaseServiceTest.class
+br\uesb\cipec\loja_automatica\unit\services\ItemPurchaseServiceTest.class
+br\uesb\cipec\loja_automatica\LojaAutomaticaApplicationTests.class
+br\uesb\cipec\loja_automatica\unit\services\ProductServiceTest.class

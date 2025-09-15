@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">TokenService.java</span></div><h1>TokenService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import br.uesb.cipec.loja_automatica.DTO.TokenDTO;
+import br.uesb.cipec.loja_automatica.exception.ActiveTokenExistsException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.exception.TokenAlreadyConfirmedException;
+import br.uesb.cipec.loja_automatica.exception.TokenExpiredException;
+import br.uesb.cipec.loja_automatica.mapper.TokenMapper;
+import br.uesb.cipec.loja_automatica.repository.TokenRepository;
+
+@Service
+<span class="nc" id="L19">public class TokenService {</span>
+    
+    @Autowired
+    TokenRepository repository;
+    
+    @Autowired
+    TokenMapper mapper;
+
+
+    public TokenDTO create(TokenDTO token){
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if(token == null){</span>
+<span class="nc" id="L30">            throw new RequiredObjectIsNullException(&quot;Token cannot be null.&quot;);</span>
+        }
+        
+        //verifies if the already exists an active token for user
+<span class="nc" id="L34">        var existingToken = repository.findByUserIdAndConfirmedAtIsNullAndExpiresAtAfter(</span>
+<span class="nc" id="L35">            token.getUserID(), </span>
+<span class="nc" id="L36">            LocalDateTime.now()</span>
+        );
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (existingToken.isPresent()) {</span>
+<span class="nc" id="L39">            throw new ActiveTokenExistsException(</span>
+                &quot;An active confirmation token already exists for this user. Please check your email or wait for it to expire.&quot;
+            );
+        }
+
+<span class="nc" id="L44">        var entity = mapper.toEntity(token);</span>
+<span class="nc" id="L45">        repository.save(entity);</span>
+<span class="nc" id="L46">        var dto = mapper.toDTO(entity);</span>
+<span class="nc" id="L47">        return dto;</span>
+    }
+
+    public TokenDTO findByToken(String token){
+<span class="nc" id="L51">        var entity = repository.findByToken(token)</span>
+<span class="nc" id="L52">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Token not found&quot;));</span>
+
+<span class="nc" id="L54">        var dto = mapper.toDTO(entity);</span>
+
+<span class="nc" id="L56">        return dto;</span>
+    }
+
+    public void confirmToken(String token){
+              
+<span class="nc" id="L61">        TokenDTO confirmedToken = findByToken(token);</span>
+        
+        //check if the token has been confirmed
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if(confirmedToken.getConfirmedAt() != null){</span>
+<span class="nc" id="L65">            throw new TokenAlreadyConfirmedException(&quot;Token already confirmed.&quot;);</span>
+        }
+        
+
+        //check if the token has expired
+<span class="nc" id="L70">        LocalDateTime expiresAt = confirmedToken.getExpiresAt();</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if(expiresAt.isBefore(LocalDateTime.now())){</span>
+<span class="nc" id="L72">            throw new TokenExpiredException(&quot;Token expired. Please request a new confirmation link.&quot;);</span>
+        }
+
+        //if everything is ok update the confirmation time
+<span class="nc" id="L76">        confirmedToken.setConfirmedAt(LocalDateTime.now());</span>
+<span class="nc" id="L77">        var entity = mapper.toEntity(confirmedToken);</span>
+<span class="nc" id="L78">        repository.save(entity);</span>
+    
+<span class="nc" id="L80">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

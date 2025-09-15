@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ControllerAuth.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.controller</a> &gt; <span class="el_source">ControllerAuth.java</span></div><h1>ControllerAuth.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.controller;
+
+
+
+
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
+import br.uesb.cipec.loja_automatica.controller.docs.AuthControllerDocs;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.service.TokenService;
+import br.uesb.cipec.loja_automatica.service.UserConfirmationService;
+import br.uesb.cipec.loja_automatica.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping(&quot;api/auth&quot;)
+@Tag(name = &quot;Authentication&quot;, description = &quot;Endpoints for User Registration and Login&quot;)
+<span class="nc" id="L31">public class ControllerAuth implements AuthControllerDocs {</span>
+    
+    @Autowired
+    UserService service;
+
+    @Autowired
+    TokenService tokenService;
+
+    @Autowired
+    UserConfirmationService userConfirmationService;
+
+    @Override
+    @PostMapping( value= &quot;/register&quot;,
+        consumes =  { 
+        MediaType.APPLICATION_JSON_VALUE ,
+        MediaType.APPLICATION_XML_VALUE ,
+        MediaType.APPLICATION_YAML_VALUE} ,
+        produces = { 
+        MediaType.APPLICATION_JSON_VALUE ,
+        MediaType.APPLICATION_XML_VALUE ,
+        MediaType.APPLICATION_YAML_VALUE}
+    )
+    public ResponseEntity&lt;?&gt; register(@RequestBody @Valid UserRegisterDTO user){
+    try { 
+        // create the user 
+<span class="nc" id="L56">        UserResponseDTO userResponse = service.create(user); </span>
+      
+        //send an email validation
+<span class="nc" id="L59">        userConfirmationService.sendConfirmationToken(userResponse.getEmail());</span>
+      
+<span class="nc" id="L61">        return ResponseEntity.ok(userResponse);</span>
+<span class="nc" id="L62">    } catch (IllegalArgumentException e) {</span>
+        // Captura o erro do service e retorna uma resposta 400 Bad Request
+<span class="nc" id="L64">        return ResponseEntity.badRequest().body(e.getMessage());</span>
+    }
+    }
+
+    // this method validates the authentication, then returns a JWT token 
+    @Override
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;?&gt; login(@RequestBody @Valid UserLoginDTO loginRequest){
+        try {
+<span class="nc" id="L73">            String token = service.authenticate(loginRequest);</span>
+<span class="nc" id="L74">            return ResponseEntity.ok(Map.of(&quot;token&quot;, token));</span>
+<span class="nc" id="L75">        } catch (ResourceNotFoundException e) {</span>
+<span class="nc" id="L76">            return ResponseEntity.status(401).body(e.getMessage());</span>
+        }
+    }
+
+    @GetMapping(&quot;/confirmToken&quot;)
+    public ResponseEntity&lt;?&gt; confirmToken(@RequestParam(&quot;token&quot;) String token){
+<span class="nc" id="L82">        userConfirmationService.confirmUserEmail(token);</span>
+<span class="nc" id="L83">        return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Email is confirmed sucessfully!&quot;));</span>
+    }
+
+    @PostMapping(&quot;/resendConfirmation&quot;)
+    public ResponseEntity&lt;?&gt; resendConfirmation(@RequestBody String email){
+<span class="nc" id="L88">        userConfirmationService.sendConfirmationToken(email);</span>
+<span class="nc" id="L89">        return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;The new link will be sent to the email.&quot;));</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

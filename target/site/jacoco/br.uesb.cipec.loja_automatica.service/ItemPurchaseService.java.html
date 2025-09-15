@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ItemPurchaseService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">ItemPurchaseService.java</span></div><h1>ItemPurchaseService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // Importante para garantir a consistência
+
+import br.uesb.cipec.loja_automatica.DTO.ItemPurchaseRequestDTO;
+import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
+import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
+import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
+import br.uesb.cipec.loja_automatica.enums.TypePayment;
+import br.uesb.cipec.loja_automatica.exception.InvalidPurchaseQuantityException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
+import br.uesb.cipec.loja_automatica.model.ItemPurchase;
+import br.uesb.cipec.loja_automatica.model.Product;
+import br.uesb.cipec.loja_automatica.model.Purchase;
+import br.uesb.cipec.loja_automatica.model.User;
+import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+import br.uesb.cipec.loja_automatica.repository.PurchaseRepository;
+
+@Service
+<span class="fc" id="L27">public class ItemPurchaseService {</span>
+
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private PurchaseMapper purchaseMapper;
+    @Autowired
+    private AuthenticationFacade facade;
+
+    @Transactional
+    public PurchaseResponseDTO addItemToCart(ItemPurchaseRequestDTO itemRequest) {
+       
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (itemRequest == null) {</span>
+<span class="fc" id="L42">            throw new RequiredObjectIsNullException(&quot;The item to be added to the cart cannot be null.&quot;);</span>
+        }
+       
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (itemRequest.getQuantity() &lt;= 0) {</span>
+<span class="fc" id="L46">            throw new InvalidPurchaseQuantityException(&quot;The quantity of an item to be added must be greater than zero.&quot;);</span>
+        }
+
+            
+<span class="fc" id="L50">        Purchase activeCart = getOrCreateActiveCartForCurrentUser();</span>
+
+<span class="fc" id="L52">        Optional&lt;ItemPurchase&gt; existingItemOpt = activeCart.getItens().stream()</span>
+<span class="fc" id="L53">                .filter(item -&gt; item.getProduct().getId().equals(itemRequest.getProductID()))</span>
+<span class="fc" id="L54">                .findFirst();</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (existingItemOpt.isPresent()) {</span>
+<span class="fc" id="L57">            ItemPurchase itemToUpdate = existingItemOpt.get();</span>
+<span class="fc" id="L58">            itemToUpdate.setQuantity(itemToUpdate.getQuantity() + itemRequest.getQuantity());</span>
+        
+<span class="fc" id="L60">            recalculateItemSubtotal(itemToUpdate);</span>
+<span class="fc" id="L61">        } else {</span>
+<span class="fc" id="L62">            Product product = productRepository.findById(itemRequest.getProductID())</span>
+<span class="fc" id="L63">                    .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Product not found&quot;));</span>
+            
+<span class="fc" id="L65">            ItemPurchase newItem = new ItemPurchase();</span>
+<span class="fc" id="L66">            newItem.setProduct(product);</span>
+<span class="fc" id="L67">            newItem.setQuantity(itemRequest.getQuantity());</span>
+<span class="fc" id="L68">            newItem.setPurchase(activeCart);</span>
+          
+<span class="fc" id="L70">            recalculateItemSubtotal(newItem);</span>
+
+<span class="fc" id="L72">            activeCart.getItens().add(newItem);</span>
+        }
+
+      
+<span class="fc" id="L76">        recalculatePurchaseTotal(activeCart);</span>
+    
+<span class="fc" id="L78">        Purchase savedCart = purchaseRepository.save(activeCart);</span>
+        
+<span class="fc" id="L80">        return purchaseMapper.toResponseDTO(savedCart);</span>
+    }
+
+    @Transactional
+    public PurchaseResponseDTO removeItemFromCart(Long itemIdToRemove) {
+<span class="fc" id="L85">        Purchase activeCart = getActiveCartForCurrentUser();</span>
+
+<span class="fc" id="L87">        ItemPurchase itemToRemove = activeCart.getItens().stream()</span>
+<span class="fc" id="L88">                .filter(item -&gt; item.getId().equals(itemIdToRemove))</span>
+<span class="fc" id="L89">                .findFirst()</span>
+<span class="fc" id="L90">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Item with ID &quot; + itemIdToRemove + &quot; not found in the cart.&quot;));</span>
+
+<span class="fc" id="L92">        activeCart.getItens().remove(itemToRemove);</span>
+
+<span class="fc" id="L94">        recalculatePurchaseTotal(activeCart);</span>
+        
+<span class="fc" id="L96">        Purchase savedCart = purchaseRepository.save(activeCart);</span>
+        
+<span class="fc" id="L98">        return purchaseMapper.toResponseDTO(savedCart);</span>
+    }
+
+    @Transactional
+    public PurchaseResponseDTO updateItemQuantity(Long itemId, int newQuantity) {
+<span class="fc" id="L103">        Purchase activeCart = getActiveCartForCurrentUser();</span>
+
+<span class="fc" id="L105">        ItemPurchase itemToUpdate = activeCart.getItens().stream()</span>
+<span class="fc" id="L106">                .filter(item -&gt; item.getId().equals(itemId))</span>
+<span class="fc" id="L107">                .findFirst()</span>
+<span class="fc" id="L108">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Item with ID &quot; + itemId + &quot; not found in the cart.&quot;));</span>
+
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (newQuantity &gt; 0) {</span>
+<span class="fc" id="L111">            itemToUpdate.setQuantity(newQuantity);</span>
+<span class="fc" id="L112">            recalculateItemSubtotal(itemToUpdate);</span>
+        } else {
+<span class="fc" id="L114">            activeCart.getItens().remove(itemToUpdate);</span>
+        }
+
+<span class="fc" id="L117">        recalculatePurchaseTotal(activeCart);</span>
+        
+<span class="fc" id="L119">        Purchase savedCart = purchaseRepository.save(activeCart);</span>
+        
+<span class="fc" id="L121">        return purchaseMapper.toResponseDTO(savedCart);</span>
+    }
+
+
+
+    private Purchase getOrCreateActiveCartForCurrentUser() {
+<span class="fc" id="L127">        User currentUser = facade.getCurrentUser();</span>
+<span class="fc" id="L128">        return purchaseRepository.findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)</span>
+<span class="fc" id="L129">                .stream().findFirst().orElseGet(() -&gt; {</span>
+<span class="fc" id="L130">                    Purchase newCart = new Purchase();</span>
+<span class="fc" id="L131">                    newCart.setUser(currentUser);</span>
+<span class="fc" id="L132">                    newCart.setStatus(StatusPurchase.AGUARDANDO_PAGAMENTO);</span>
+<span class="fc" id="L133">                    newCart.setPayment(TypePayment.PIX); </span>
+<span class="fc" id="L134">                    newCart.setValue(BigDecimal.ZERO);  </span>
+<span class="fc" id="L135">                    return purchaseRepository.save(newCart);</span>
+                });
+    }
+
+    private Purchase getActiveCartForCurrentUser() {
+<span class="fc" id="L140">        User currentUser = facade.getCurrentUser();</span>
+<span class="fc" id="L141">        return purchaseRepository.findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)</span>
+<span class="fc" id="L142">                .stream().findFirst()</span>
+<span class="fc" id="L143">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;No active cart found for the user.&quot;));</span>
+    }
+
+    private void recalculateItemSubtotal(ItemPurchase item) {
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">        if (item == null || item.getProduct() == null) return;</span>
+<span class="fc" id="L148">        BigDecimal subTotal = item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));</span>
+<span class="fc" id="L149">        item.setSubvalor(subTotal);</span>
+<span class="fc" id="L150">    }</span>
+
+    private void recalculatePurchaseTotal(Purchase purchase) {
+<span class="fc" id="L153">        BigDecimal totalValue = purchase.getItens().stream()</span>
+<span class="fc" id="L154">                .map(ItemPurchase::getSubvalor) // Agora podemos somar os subtotais que já estão corretos</span>
+<span class="fc" id="L155">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+<span class="fc" id="L156">        purchase.setValue(totalValue);</span>
+<span class="fc" id="L157">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

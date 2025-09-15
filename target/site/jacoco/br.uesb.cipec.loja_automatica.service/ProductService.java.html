@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProductService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">ProductService.java</span></div><h1>ProductService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+import br.uesb.cipec.loja_automatica.DTO.ProductDTO;
+import br.uesb.cipec.loja_automatica.exception.InvalidProductDataException;
+import br.uesb.cipec.loja_automatica.exception.ProductInUseException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.mapper.ProductDocumentMapper;
+import br.uesb.cipec.loja_automatica.mapper.ProductMapper;
+import br.uesb.cipec.loja_automatica.model.Product;
+import br.uesb.cipec.loja_automatica.repository.ItemPurchaseRepository;
+import br.uesb.cipec.loja_automatica.repository.ProductRepository;
+import br.uesb.cipec.loja_automatica.service.index.ProductIndexingService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+
+@Service
+<span class="fc" id="L25">public class ProductService {</span>
+    
+    @Autowired 
+    private ProductRepository repository;
+
+    @Autowired
+    private ProductMapper mapper;
+
+    @Autowired
+    private ItemPurchaseRepository itemPurchaseRepository; 
+
+    @Autowired
+    private ProductIndexingService indexingService; 
+    
+    @Autowired
+    private ProductDocumentMapper documentMapper; 
+
+<span class="fc" id="L42">    private final Logger logger = LoggerFactory.getLogger(ProductService.class.getName());</span>
+
+    @Transactional(readOnly = true)
+    public ProductDTO findById(Long id) {
+<span class="fc" id="L46">        logger.info(&quot;Finding one product with ID: {}&quot;, id); </span>
+<span class="fc" id="L47">        Product entity = repository.findById(id)</span>
+<span class="fc" id="L48">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Product not found with id: &quot; + id));</span>
+<span class="fc" id="L49">        return mapper.toDTO(entity);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;ProductDTO&gt; findAll(Pageable pageable) {
+<span class="fc" id="L54">        logger.info(&quot;Finding all products (paginated)&quot;);</span>
+<span class="fc" id="L55">        Page&lt;Product&gt; productPage = repository.findAll(pageable);</span>
+<span class="fc" id="L56">        return productPage.map(mapper::toDTO);</span>
+    }
+
+    @Transactional
+    public ProductDTO create(ProductDTO product) {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (product == null) {</span>
+<span class="fc" id="L62">            throw new RequiredObjectIsNullException(&quot;Product data cannot be null.&quot;);</span>
+        }
+<span class="fc bfc" id="L64" title="All 4 branches covered.">        if (product.getName() == null || product.getName().isBlank()) {</span>
+<span class="fc" id="L65">            throw new InvalidProductDataException(&quot;Product name cannot be null or empty.&quot;);</span>
+        }
+<span class="fc bfc" id="L67" title="All 4 branches covered.">        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) &lt; 0) {</span>
+<span class="fc" id="L68">            throw new InvalidProductDataException(&quot;Product price cannot be negative.&quot;);</span>
+        }
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (product.getAmount() == null || product.getAmount() &lt; 0) {</span>
+<span class="fc" id="L71">            throw new InvalidProductDataException(&quot;Product stock amount cannot be negative.&quot;);</span>
+        }
+        
+<span class="fc" id="L74">        logger.info(&quot;Creating one product&quot;);</span>
+<span class="fc" id="L75">        Product entity = mapper.toEntity(product);</span>
+<span class="fc" id="L76">        indexingService.save(documentMapper.toDocument(entity));</span>
+<span class="fc" id="L77">        Product savedEntity = repository.save(entity);</span>
+<span class="fc" id="L78">        return mapper.toDTO(savedEntity);</span>
+    }
+
+    @Transactional
+    public ProductDTO update(ProductDTO product) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (product == null) {</span>
+<span class="fc" id="L84">            throw new RequiredObjectIsNullException(&quot;Product data cannot be null.&quot;);</span>
+        }
+        
+<span class="fc" id="L87">        logger.info(&quot;Updating product with ID: {}&quot;, product.getId());</span>
+<span class="fc" id="L88">        Product entity = repository.findById(product.getId())</span>
+<span class="fc" id="L89">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Product not found with id: &quot; + product.getId()));</span>
+
+<span class="fc bfc" id="L91" title="All 4 branches covered.">        if (product.getName() == null || product.getName().isBlank()) {</span>
+<span class="fc" id="L92">            throw new InvalidProductDataException(&quot;Product name cannot be null or empty.&quot;);</span>
+        }
+<span class="fc bfc" id="L94" title="All 4 branches covered.">        if (product.getPrice() == null || product.getPrice().compareTo(BigDecimal.ZERO) &lt; 0) {</span>
+<span class="fc" id="L95">            throw new InvalidProductDataException(&quot;Product price cannot be negative.&quot;);</span>
+        }
+<span class="fc bfc" id="L97" title="All 4 branches covered.">        if (product.getAmount() == null || product.getAmount() &lt; 0) {</span>
+<span class="fc" id="L98">            throw new InvalidProductDataException(&quot;Product stock amount cannot be negative.&quot;);</span>
+        }
+
+<span class="fc" id="L101">        entity.setName(product.getName());</span>
+<span class="fc" id="L102">        entity.setAmount(product.getAmount());</span>
+<span class="fc" id="L103">        entity.setDescription(product.getDescription());</span>
+<span class="fc" id="L104">        entity.setPrice(product.getPrice());</span>
+
+<span class="fc" id="L106">        Product updatedEntity = repository.save(entity);</span>
+<span class="fc" id="L107">        indexingService.save(documentMapper.toDocument(updatedEntity));</span>
+<span class="fc" id="L108">        return mapper.toDTO(updatedEntity);</span>
+    }
+
+    @Transactional
+    public void delete(Long id) {
+<span class="fc" id="L113">        logger.info(&quot;Deleting product with ID: {}&quot;, id);</span>
+        
+<span class="fc" id="L115">        Product entity = repository.findById(id)</span>
+<span class="fc" id="L116">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Product not found with id: &quot; + id));</span>
+        
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (itemPurchaseRepository.existsByProductId(id)) {</span>
+<span class="fc" id="L119">            throw new ProductInUseException(&quot;Cannot delete a product that is part of one or more existing purchases.&quot;);</span>
+        }
+        
+<span class="fc" id="L122">        repository.delete(entity);</span>
+<span class="fc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

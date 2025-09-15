@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: br.uesb.cipec.loja_automatica.unit.services.ProductServiceTest
+-------------------------------------------------------------------------------
+Tests run: 24, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.491 s -- in br.uesb.cipec.loja_automatica.unit.services.ProductServiceTest

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import br.uesb.cipec.loja_automatica.DTO.UserDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserLoginDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserRegisterDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserResponseDTO;
+import br.uesb.cipec.loja_automatica.DTO.UserUpdateDTO;
+import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
+import br.uesb.cipec.loja_automatica.enums.UserRole;
+import br.uesb.cipec.loja_automatica.exception.BadCredentialsException;
+import br.uesb.cipec.loja_automatica.exception.EmailAlreadyInUseException;
+import br.uesb.cipec.loja_automatica.exception.InvalidUserDataException;
+import br.uesb.cipec.loja_automatica.exception.RequiredObjectIsNullException;
+import br.uesb.cipec.loja_automatica.exception.ResourceNotFoundException;
+import br.uesb.cipec.loja_automatica.mapper.UserMapper;
+import br.uesb.cipec.loja_automatica.model.User;
+import br.uesb.cipec.loja_automatica.repository.UserRepository;
+import br.uesb.cipec.loja_automatica.security.JwtUtil;
+
+@Service
+<span class="fc" id="L33">public class UserService {</span>
+ 
+    @Autowired
+    UserRepository repository;
+
+    @Autowired
+    UserMapper mapper;
+
+    @Autowired 
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    public UserResponseDTO create(UserRegisterDTO user){
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L55">            throw new RequiredObjectIsNullException(&quot;User cannot be null.&quot;);</span>
+        }
+<span class="fc bfc" id="L57" title="All 4 branches covered.">      if (user.getName() == null || user.getName().isBlank()) {</span>
+<span class="fc" id="L58">        throw new InvalidUserDataException(&quot;User name cannot be null or empty.&quot;);</span>
+    }
+<span class="fc bfc" id="L60" title="All 4 branches covered.">    if (user.getEmail() == null || user.getEmail().isBlank()) {</span>
+<span class="fc" id="L61">        throw new InvalidUserDataException(&quot;User email cannot be null or empty.&quot;);</span>
+    }
+<span class="pc bpc" id="L63" title="1 of 4 branches missed.">    if (user.getPassword() == null || user.getPassword().isBlank()) {</span>
+<span class="fc" id="L64">        throw new InvalidUserDataException(&quot;User password cannot be null or empty.&quot;);</span>
+    }
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (repository.findByEmail(user.getEmail()).isPresent()){</span>
+<span class="fc" id="L67">           throw new EmailAlreadyInUseException(&quot;Email already in use.&quot;);</span>
+        }
+
+<span class="fc" id="L70">        var entity = mapper.toEntity(user);</span>
+        
+        // encrypting the password before saving the entity 
+<span class="fc" id="L73">        String encryptedPassword = passwordEncoder.encode(entity.getPassword());</span>
+<span class="fc" id="L74">        entity.setPassword(encryptedPassword);</span>
+<span class="fc" id="L75">        entity.setRole(UserRole.USER);</span>
+<span class="fc" id="L76">        repository.save(entity); //JPA automatically update the entity with the ID generated and other managed fields</span>
+
+<span class="fc" id="L78">        var dto = mapper.toResponseDTO(entity);</span>
+
+<span class="fc" id="L80">        return dto;</span>
+    }
+
+    public UserDTO findById(Long id){
+<span class="fc" id="L84">        var entity = repository.findById(id)</span>
+<span class="fc" id="L85">        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with id: &quot; + id));</span>
+
+<span class="fc" id="L87">        var dto = mapper.toDTO(entity);</span>
+
+<span class="fc" id="L89">        return dto;</span>
+    }
+
+    public UserDTO findByEmail(String email){
+<span class="fc" id="L93">        var entity = repository.findByEmail(email)</span>
+<span class="fc" id="L94">        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with email: &quot; + email));</span>
+
+<span class="fc" id="L96">        var dto = mapper.toDTO(entity);</span>
+
+<span class="fc" id="L98">        return dto;</span>
+    }
+
+    public UserResponseDTO findByIdResponseDTO(Long id){
+<span class="fc" id="L102">        var entity = repository.findById(id)</span>
+<span class="fc" id="L103">        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with id: &quot; + id));</span>
+
+<span class="fc" id="L105">        var dto = mapper.toResponseDTO(entity);</span>
+
+<span class="fc" id="L107">        return dto;</span>
+    }
+
+    public UserResponseDTO findByEmailResponseDTO(String email){
+<span class="fc" id="L111">        var entity = repository.findByEmail(email)</span>
+<span class="fc" id="L112">        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with email: &quot; + email));</span>
+
+<span class="fc" id="L114">        var dto = mapper.toResponseDTO(entity);</span>
+
+<span class="fc" id="L116">        return dto;</span>
+    }
+
+    public Page&lt;UserResponseDTO&gt; findAll(Pageable pageable){
+<span class="fc" id="L120">        Page&lt;User&gt; users = repository.findAll(pageable);</span>
+
+
+<span class="fc" id="L123">        return users.map(mapper::toResponseDTO);</span>
+    }
+
+    public UserResponseDTO update(UserUpdateDTO user){
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (user == null) {</span>
+<span class="fc" id="L129">            throw new RequiredObjectIsNullException(&quot;It is not allowed to persist a null object!&quot;);</span>
+        }
+
+<span class="fc" id="L132">        User entity = authenticationFacade.getCurrentUser();</span>
+  
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if(user.getEmail() != null){</span>
+<span class="fc" id="L135">            Optional&lt;User&gt; userWithSameEmail = repository.findByEmail(user.getEmail());</span>
+<span class="pc bpc" id="L136" title="1 of 4 branches missed.">            if (userWithSameEmail.isPresent() &amp;&amp; !userWithSameEmail.get().getId().equals(user.getId())) {</span>
+<span class="fc" id="L137">                throw new EmailAlreadyInUseException(&quot;Email already in use.&quot;);</span>
+            }
+<span class="fc" id="L139">            entity.setEmail(user.getEmail()); </span>
+        }
+    
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if(user.getName()!=null){</span>
+<span class="fc" id="L143">            entity.setName(user.getName());</span>
+        }
+        
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if(user.getDateOfBirth() != null){</span>
+<span class="fc" id="L147">            entity.setDateOfBirth(user.getDateOfBirth());</span>
+        }
+          
+<span class="fc" id="L150">        repository.save(entity);</span>
+  
+<span class="fc" id="L152">        var dto = mapper.toResponseDTO(entity);</span>
+<span class="fc" id="L153">        return dto;</span>
+    }
+  
+    public boolean isUserEnabled(Long userId) {
+<span class="fc" id="L157">        return repository.isUserEnabled(userId)</span>
+<span class="fc" id="L158">                .orElseThrow(() -&gt; new  ResourceNotFoundException(&quot;User not found&quot;));</span>
+    }
+    
+    public void deleteMyAccount() {
+        // Take the logged user
+<span class="fc" id="L163">        User currentUser = authenticationFacade.getCurrentUser();</span>
+
+        // Instead of deleting the tuple we deactivate it
+<span class="fc" id="L166">        currentUser.setActive(false); ;</span>
+<span class="fc" id="L167">        repository.save(currentUser);</span>
+<span class="fc" id="L168">    }</span>
+
+
+    public String authenticate(UserLoginDTO loginRequest) {
+    
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if(!repository.existsByEmailAndEnabledTrue(loginRequest.getEmail())){</span>
+<span class="nc" id="L174">            throw new BadCredentialsException(&quot;Bad credentials.&quot;);</span>
+        }
+
+<span class="nc" id="L177">        var usernamePassword = new UsernamePasswordAuthenticationToken(</span>
+<span class="nc" id="L178">            loginRequest.getEmail(),</span>
+<span class="nc" id="L179">            loginRequest.getPassword()</span>
+        );
+  
+<span class="nc" id="L182">        var auth = this.authenticationManager.authenticate(usernamePassword);</span>
+
+        // Pega o principal, que é um UserDetails
+<span class="nc" id="L185">        UserDetails userDetails = (UserDetails) auth.getPrincipal();</span>
+
+        // Usa o getUsername() do UserDetails, que já retorna o email
+<span class="nc" id="L188">        return jwtUtil.generateToken(userDetails.getUsername());</span>
+    }
+
+
+    public UserResponseDTO getMyProfile() {
+        // Usa a facade para pegar o usuário logado de forma segura
+<span class="fc" id="L194">        User currentUser = authenticationFacade.getCurrentUser();</span>
+        
+        // Mapeia a entidade para um DTO de resposta seguro (sem a senha)
+<span class="fc" id="L197">        return mapper.toResponseDTO(currentUser);</span>
+    }
+
+    public void enableUser(Long userID){
+<span class="fc" id="L201">        var user = repository.findById(userID)</span>
+<span class="fc" id="L202">        .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with id: &quot; + userID));</span>
+<span class="fc" id="L203">        user.setEnabled(true);</span>
+<span class="fc" id="L204">        repository.save(user);</span>
+<span class="fc" id="L205">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

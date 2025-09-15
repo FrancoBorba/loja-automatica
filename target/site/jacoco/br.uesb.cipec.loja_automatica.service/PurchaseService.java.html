@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PurchaseService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loja-automatica</a> &gt; <a href="index.source.html" class="el_package">br.uesb.cipec.loja_automatica.service</a> &gt; <span class="el_source">PurchaseService.java</span></div><h1>PurchaseService.java</h1><pre class="source lang-java linenums">package br.uesb.cipec.loja_automatica.service;
+
+import br.uesb.cipec.loja_automatica.DTO.PurchaseResponseDTO;
+import br.uesb.cipec.loja_automatica.component.AuthenticationFacade;
+import br.uesb.cipec.loja_automatica.enums.StatusPurchase;
+import br.uesb.cipec.loja_automatica.exception.*;
+import br.uesb.cipec.loja_automatica.mapper.PurchaseMapper;
+import br.uesb.cipec.loja_automatica.model.Purchase;
+import br.uesb.cipec.loja_automatica.model.User;
+import br.uesb.cipec.loja_automatica.payment.StripeService;
+import br.uesb.cipec.loja_automatica.repository.PurchaseRepository;
+import com.stripe.exception.StripeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+<span class="fc" id="L24">public class PurchaseService {</span>
+
+    @Autowired
+    private PurchaseRepository purchaseRepository;
+    @Autowired
+    private PurchaseMapper purchaseMapper;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private StockService stockService;
+    @Autowired
+    private StripeService stripeService;
+
+<span class="fc" id="L37">    private final Logger logger = LoggerFactory.getLogger(PurchaseService.class.getName());</span>
+
+    // --- METHODS FOR PURCHASE HISTORY (PurchaseController) ---
+
+    @Transactional(readOnly = true)
+    public Page&lt;PurchaseResponseDTO&gt; findAll(Pageable pageable) {
+<span class="fc" id="L43">        logger.info(&quot;Finding all purchases (Admin operation).&quot;);</span>
+<span class="fc" id="L44">        return purchaseRepository.findAll(pageable).map(purchaseMapper::toResponseDTO);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public PurchaseResponseDTO findById(Long id) {
+<span class="fc" id="L49">        logger.info(&quot;Finding purchase by ID: {}&quot;, id);</span>
+<span class="fc" id="L50">        Purchase purchase = findPurchaseById(id);</span>
+<span class="fc" id="L51">        return purchaseMapper.toResponseDTO(purchase);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public Page&lt;PurchaseResponseDTO&gt; findPurchasesByCurrentUser(StatusPurchase status, Pageable pageable) {
+<span class="nc" id="L56">        logger.info(&quot;Finding purchases for current user. Filter status: {}&quot;, status);</span>
+<span class="nc" id="L57">        User currentUser = authenticationFacade.getCurrentUser();</span>
+        Page&lt;Purchase&gt; purchasePage;
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (status != null) {</span>
+<span class="nc" id="L60">            purchasePage = purchaseRepository.findByUserIdAndStatus(currentUser.getId(), status, pageable);</span>
+        } else {
+<span class="nc" id="L62">            purchasePage = purchaseRepository.findByUserId(currentUser.getId(), pageable);</span>
+        }
+<span class="nc" id="L64">        return purchasePage.map(purchaseMapper::toResponseDTO);</span>
+    }
+    
+    @Transactional
+    public void delete(Long id) {
+<span class="fc" id="L69">        logger.info(&quot;Deleting purchase with ID: {}&quot;, id);</span>
+<span class="fc" id="L70">        Purchase purchase = findPurchaseById(id);</span>
+<span class="fc" id="L71">        purchaseRepository.delete(purchase);</span>
+<span class="fc" id="L72">    }</span>
+
+    // METHODS FOR ACTIVE CART (Used by CartController)
+
+
+    @Transactional(readOnly = true)
+    public Optional&lt;PurchaseResponseDTO&gt; findActiveCartByUser() {
+<span class="nc" id="L79">        logger.info(&quot;Finding active cart for the current user.&quot;);</span>
+<span class="nc" id="L80">        User currentUser = authenticationFacade.getCurrentUser();</span>
+
+<span class="nc" id="L82">        return purchaseRepository</span>
+<span class="nc" id="L83">            .findByUserIdAndStatus(currentUser.getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)</span>
+<span class="nc" id="L84">            .map(purchaseMapper::toResponseDTO);</span>
+    }
+
+    @Transactional
+    public String checkout() throws StripeException {
+<span class="fc" id="L89">        logger.info(&quot;Initiating checkout for the active cart.&quot;);</span>
+        
+       
+<span class="fc" id="L92">        Purchase cartToCheckout = purchaseRepository</span>
+<span class="fc" id="L93">            .findByUserIdAndStatus(authenticationFacade.getCurrentUser().getId(), StatusPurchase.AGUARDANDO_PAGAMENTO)</span>
+<span class="pc" id="L94">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;No active cart found to checkout.&quot;));</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (cartToCheckout.getItens().isEmpty()) {</span>
+<span class="nc" id="L97">            throw new EmptyCartException(&quot;Cannot checkout an empty cart.&quot;);</span>
+        }
+        
+<span class="fc" id="L100">        return stripeService.creatCheckoutSesion(cartToCheckout);</span>
+    }
+
+    // METHOD CALLED BY WEBHOOK
+
+    @Transactional
+    public void confirmPayment(Long purchaseId) {
+<span class="fc" id="L107">        logger.info(&quot;Confirming payment for purchase ID: {}&quot;, purchaseId);</span>
+<span class="fc" id="L108">        Purchase purchase = findPurchaseById(purchaseId);</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (purchase.getStatus() == StatusPurchase.AGUARDANDO_PAGAMENTO) {</span>
+<span class="fc" id="L111">            stockService.debitStock(purchase.getItens());</span>
+<span class="fc" id="L112">            purchase.setStatus(StatusPurchase.PAGO);</span>
+<span class="fc" id="L113">            purchaseRepository.save(purchase);</span>
+<span class="fc" id="L114">            logger.info(&quot;Purchase {} successfully updated to PAID.&quot;, purchaseId);</span>
+        } else {
+<span class="nc" id="L116">             throw new InvalidPurchaseStatusException(&quot;Purchase is not in AGUARDANDO_PAGAMENTO state.&quot;);</span>
+        }
+<span class="fc" id="L118">    }</span>
+
+    //  SUPPORT METHODS
+
+ 
+
+    private Purchase findPurchaseById(Long id) {
+<span class="fc" id="L125">        return purchaseRepository.findById(id)</span>
+<span class="pc" id="L126">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Purchase not found with ID: &quot; + id));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
